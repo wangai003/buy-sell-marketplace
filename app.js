@@ -100,7 +100,7 @@ mongoose
 //middlewares
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? 'https://buy-sell-marketplace-qigz-q0ccor0ss-wangai-moses-projects.vercel.app'
+    ? ['https://buy-sell-marketplace-qigz.vercel.app', 'https://buy-sell-marketplace-qigz-q0ccor0ss-wangai-moses-projects.vercel.app']
     : 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
