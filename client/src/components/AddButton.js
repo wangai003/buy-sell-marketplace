@@ -16,7 +16,7 @@ const AddButton = () => {
   return (
     <>
       <div onClick={handleSell} className='float-button' role='button'>
-        <i class='fa fa-plus my-float'></i>
+        <i className='fa fa-plus my-float'></i>
       </div>
     </>
   );

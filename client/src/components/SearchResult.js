@@ -1,47 +1,47 @@
 import { useEffect, useState } from 'react';
 import queryString from 'query-string';
-import { Input, Pagination, Empty, Radio, Space } from 'antd';
-import { prices } from '../components/PriceRange';
+import { Input, Pagination, Empty } from 'antd';
 import Breadcrumb from 'react-bootstrap/Breadcrumb';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 import { useHistory } from 'react-router';
-import { allLocations } from '../actions/admin';
-import { allCategories } from '../actions/product';
+import { allLocations, getCategoryHierarchy } from '../actions/admin';
 import { searchResults } from '../actions/product';
+import HierarchicalFilter from './HierarchicalFilter';
+import CurrencySelector from './CurrencySelector';
 const { Search } = Input;
 
 const SearchResult = () => {
   const countPerPage = 10;
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
+  const [element, setElement] = useState('');
   const [name, setName] = useState('');
-  const [price, setPrice] = useState([]);
-  const [min, setMin] = useState();
-  const [max, setMax] = useState();
-  const [condition, setCondition] = useState('');
   const [locationName, setLocationName] = useState('');
   const [categoryName, setCategoryName] = useState('');
+  const [subcategoryName, setSubcategoryName] = useState('');
+  const [elementName, setElementName] = useState('');
   const [searchResult, setSearchResult] = useState([]);
   const [current, setCurrent] = useState();
   const [pagination, setPagination] = useState();
   const history = useHistory();
-  const minId = document.querySelector('.min');
-  const maxId = document.querySelector('.max');
 
   const loadSearchResults = async (page) => {
-    const { location, category, name } = queryString.parse(
+    const { location, category, subcategory, element, name } = queryString.parse(
       window.location.search
     );
     setCategory(category);
+    setSubcategory(subcategory);
+    setElement(element);
     setLocation(location);
     setName(name);
     const res = await searchResults({
       location,
       category,
+      subcategory,
+      element,
       name,
-      price,
-      condition,
     });
     setCurrent(page);
     const to = page * countPerPage;
@@ -51,11 +51,29 @@ const SearchResult = () => {
   };
 
   const loadCategories = async () => {
-    const { category } = queryString.parse(window.location.search);
-    const res = await allCategories();
-    res.data.filter((cat) => {
+    const { category, subcategory, element } = queryString.parse(window.location.search);
+    const res = await getCategoryHierarchy();
+
+    // Find and set category name
+    res.data.forEach((cat) => {
       if (cat._id === category) {
         setCategoryName(cat.name);
+      }
+      // Find subcategory name
+      if (cat.subcategories) {
+        cat.subcategories.forEach((sub) => {
+          if (sub._id === subcategory) {
+            setSubcategoryName(sub.name);
+          }
+          // Find element name
+          if (sub.elements) {
+            sub.elements.forEach((elem) => {
+              if (elem._id === element) {
+                setElementName(elem.name);
+              }
+            });
+          }
+        });
       }
     });
   };
@@ -69,71 +87,19 @@ const SearchResult = () => {
     });
   };
 
-  const handleCondition = (e) => {
-    setCondition(e.target.value);
-    history.push(
-      `search-result?&location=${location}&category=${category}&name=${name}&price=${price}&condition=${e.target.value}`
-    );
-  };
-
-  const handlePriceRange = (e) => {
-    setPrice(e.target.value);
-    history.push(
-      `search-result?&location=${location}&category=${category}&name=${name}&price=${e.target.value}&condition=${condition}`
-    );
-    setMin('');
-    setMax('');
-  };
-
   const handleSearch = (e) => {
     setName(e.target.value);
   };
 
   const handleSubmit = (name) => {
     history.push(
-      `search-result?&location=${location}&category=${category}&name=${name}&price=${price}&condition=${condition}`
+      `search-result?&location=${location}&category=${category}&subcategory=${subcategory}&element=${element}&name=${name}`
     );
   };
 
-  const handleMin = (e) => {
-    setMin(e.target.value);
-    minId.style.border = '1px solid #ced4da';
-  };
-  const handleMax = (e) => {
-    setMax(e.target.value);
-    maxId.style.border = '1px solid #ced4da';
-  };
-  const handleSubmitPrice = () => {
-    if (!min && !max) {
-      minId.style.border = '1px solid red';
-      maxId.style.border = '1px solid red';
-      return;
-    }
-    if (!min) {
-      minId.style.border = '1px solid red';
-      maxId.style.border = '1px solid #ced4da';
-      return;
-    }
-    if (!max) {
-      maxId.style.border = '1px solid red';
-      minId.style.border = '1px solid #ced4da';
-      return;
-    }
-    const newArray = [];
-    newArray[0] = parseInt(min);
-    newArray[1] = parseInt(max);
-
-    setPrice(newArray);
-
-    history.push(
-      `search-result?&location=${location}&category=${category}&name=${name}&price=${newArray}&condition=${condition}`
-    );
-  };
-
-  //format currency
-  Number.prototype.format = function (n, x) {
+  const formatNumber = (num, n = 0, x = 3) => {
     var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
-    return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
+    return num.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
   };
 
   useEffect(() => {
@@ -148,7 +114,10 @@ const SearchResult = () => {
         <div className='row search'>
           <p className='header-text text-center me-2 d-flex justify-content-center'>
             Searching for&nbsp;
-            {categoryName ? categoryName : <span>Products</span>}&nbsp;in&nbsp;
+            {categoryName ? categoryName : <span>Products</span>}
+            {subcategoryName && <span>&nbsp; {subcategoryName}</span>}
+            {elementName && <span>&nbsp;{elementName}</span>}
+            &nbsp;in&nbsp;
             {locationName ? locationName : <span>Nigeria</span>}
           </p>
           <div className='col-md-8 mx-auto d-flex justify-content-center'>
@@ -165,6 +134,11 @@ const SearchResult = () => {
             />
           </div>
         </div>
+        <div className='row'>
+          <div className='col-md-8 mx-auto d-flex justify-content-center'>
+            <CurrencySelector />
+          </div>
+        </div>
       </div>
 
       <div className='row container-fluid mx-auto mt-3 mb-5 profile-container'>
@@ -176,74 +150,18 @@ const SearchResult = () => {
           </Breadcrumb.Item>
           <Breadcrumb.Item active>
             {categoryName ? categoryName : <span>Products</span>}
+            {subcategoryName && <span> {subcategoryName}</span>}
+            {elementName && <span> {elementName}</span>}
           </Breadcrumb.Item>
         </Breadcrumb>
+
         <div className='col-md-3 mb-2'>
           <div className='card rounded-0 profile-card card-shadow'>
             <div className='card-header p-3'>
               <strong>
-                <p className='text-dark1'>Condition</p>
+                <p className='text-dark1'>Filter Products</p>
               </strong>
-              <Radio.Group onChange={handleCondition} value={condition}>
-                <Space direction='vertical'>
-                  <Radio value={''}>Any</Radio>
-                  <Radio value={'New'}>New</Radio>
-                  <Radio value={'Used'}>Used</Radio>
-                </Space>
-              </Radio.Group>
-              <hr />
-              <strong>
-                <p className='text-dark1'>Price range</p>
-              </strong>
-              <div className='mb-2'>
-                <Radio.Group onChange={handlePriceRange} value={price}>
-                  <Space direction='vertical'>
-                    {prices.map((p, i) => {
-                      return (
-                        <Radio key={i} value={p.array}>
-                          {p.name}
-                        </Radio>
-                      );
-                    })}
-                  </Space>
-                </Radio.Group>
-              </div>
-              <span>Custom price:</span>
-              <div className='form-group d-flex justify-content-center align-items-center'>
-                <div class='input-group input-group-sm me-2'>
-                  <span class='input-group-text' id='inputGroup-sizing-sm'>
-                    ₦
-                  </span>
-                  <input
-                    type='number'
-                    class='form-control rounded-0 shadow-none min'
-                    id='min'
-                    value={min}
-                    onChange={handleMin}
-                  />
-                </div>
-                <div>to</div>
-                <div class='input-group input-group-sm ms-2'>
-                  <span class='input-group-text' id='inputGroup-sizing-sm'>
-                    ₦
-                  </span>
-                  <input
-                    type='number'
-                    class='form-control rounded-0 shadow-none max'
-                    id='max'
-                    value={max}
-                    onChange={handleMax}
-                  />
-                </div>
-                <div>
-                  <button
-                    onClick={handleSubmitPrice}
-                    className='btn btn-primary btn-sm rounded-0 shadow-none ms-1'
-                  >
-                    GO
-                  </button>
-                </div>
-              </div>
+              <HierarchicalFilter />
             </div>
           </div>
         </div>
@@ -305,7 +223,7 @@ const SearchResult = () => {
                                 </Link>
                                 <span>
                                   <h6 className='text-success'>
-                                    ₦{parseInt(p.price).format()}
+                                    USDC{formatNumber(p.price)}
                                   </h6>
                                 </span>
                               </div>
@@ -326,7 +244,7 @@ const SearchResult = () => {
                                         // fontSize: '14px',
                                       }}
                                     >
-                                      {p.category.name}
+                                      {p.category.name} {p.subcategory.name} {p.element.name}
                                     </Link>
                                   </span>
                                   <span>
@@ -433,7 +351,7 @@ const SearchResult = () => {
                             </Link>
                             <span>
                               <h6 className='text-success'>
-                                ₦{parseInt(p.price).format()}
+                                USDC{formatNumber(p.price)}
                               </h6>
                             </span>
                           </div>

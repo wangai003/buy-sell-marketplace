@@ -61,10 +61,9 @@ const AllProducts = () => {
     setEnums({ ...enums, newStatus: status });
   };
 
-  //format currency
-  Number.prototype.format = function (n, x) {
+  const formatNumber = (num, n = 0, x = 3) => {
     var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
-    return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
+    return num.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
   };
 
   const history = useHistory();
@@ -153,18 +152,18 @@ const AllProducts = () => {
             </li>
           </ul>
         </div>
-        <div className='col-md-9 mb-5'>
-          <div className='card rounded-0 profile-card card-shadow'>
-            <div className='card-header profile-card p-3'>
+        <div className='col-md-9 mb-5' style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <div className='card rounded-0 profile-card card-shadow' style={{ background: 'linear-gradient(to right, #FFD700, #FFFFFF)', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', borderRadius: '8px', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
+            <div className='card-header profile-card p-3' style={{ background: '#228B22', color: 'white', borderRadius: '8px 8px 0 0' }}>
               <h4>Manage Products ({totalCount.length})</h4>
             </div>
             {!checkActive && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
             {checkActive && (
-              <div className='card-body'>
+              <div className='card-body' style={{ background: 'white', borderRadius: '0 0 8px 8px' }}>
                 {pagination.map((p, i) => {
                   if (p.status === 'active') {
                     return (
-                      <div class='card rounded-0 mb-3 product-card' key={i}>
+                      <div class='card rounded-0 mb-3 product-card' key={i} style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderRadius: '8px', transition: 'transform 0.3s ease, box-shadow 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
                         <div class='row g-0'>
                           <div class='col-md-3 product-img'>
                             <Link
@@ -175,10 +174,10 @@ const AllProducts = () => {
                                 src={p.images[0]}
                                 className='img-fluid rounded-start img-horizontal'
                                 alt={p.name}
-                                style={{ height: '100%' }}
+                                style={{ height: '100%', borderRadius: '8px 0 0 8px' }}
                               />
                               <span className='product-img-count'>
-                                <span className='badge badge-pill opacity'>
+                                <span className='badge badge-pill opacity' style={{ background: '#FFD700', color: '#228B22' }}>
                                   {p.images.length}
                                   <i class='fas fa-images ps-1'></i>
                                 </span>
@@ -192,13 +191,13 @@ const AllProducts = () => {
                                   to={`/product/${p._id}`}
                                   className='text-decoration-none'
                                 >
-                                  <h6 class='card-title text-dark1'>
+                                  <h6 class='card-title text-dark1' style={{ color: '#228B22' }}>
                                     {p.name}
                                   </h6>
                                 </Link>
                                 <span>
                                   <h6 className='text-success'>
-                                    ₦{parseInt(p.price).format()}
+                                    USDC{formatNumber(parseInt(p.price))}
                                   </h6>
                                 </span>
                               </div>
@@ -214,9 +213,10 @@ const AllProducts = () => {
                                       to={`/category/${p.category._id}`}
                                       className='badge badge-pill text-muted me-2 text-decoration-none'
                                       style={{
-                                        backgroundColor: '#eef2f4',
-                                        color: '#303a4b',
-                                        // fontSize: '14px',
+                                        backgroundColor: '#FFD700',
+                                        color: '#228B22',
+                                        borderRadius: '4px',
+                                        transition: 'background-color 0.3s ease'
                                       }}
                                     >
                                       {p.category.name}
@@ -226,8 +226,9 @@ const AllProducts = () => {
                                     <div
                                       className='badge badge-pill text-muted'
                                       style={{
-                                        backgroundColor: '#eef2f4',
-                                        color: '#303a4b',
+                                        backgroundColor: '#FFD700',
+                                        color: '#228B22',
+                                        borderRadius: '4px'
                                       }}
                                     >
                                       {p.condition}
@@ -241,6 +242,8 @@ const AllProducts = () => {
                                       aria-label='Default select example'
                                       style={{
                                         padding: '.2rem 2.25rem .2rem .75rem',
+                                        border: '1px solid #FFD700',
+                                        borderRadius: '4px'
                                       }}
                                       onChange={(e) =>
                                         handleStatusChange(e, p._id)
@@ -264,6 +267,9 @@ const AllProducts = () => {
                                     <Link
                                       to={`/edit-product/${p._id}`}
                                       class='btn btn-primary btn-sm text-white pt-0 pb-0'
+                                      style={{ background: '#228B22', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease' }}
+                                      onMouseEnter={(e) => e.target.style.backgroundColor = '#FFD700'}
+                                      onMouseLeave={(e) => e.target.style.backgroundColor = '#228B22'}
                                     >
                                       Edit
                                     </Link>
@@ -305,6 +311,7 @@ const AllProducts = () => {
                   onChange={loadProducts}
                   defaultCurrent={current}
                   total={products.length}
+                  style={{ marginTop: '20px', textAlign: 'center' }}
                 />
               </div>
             )}

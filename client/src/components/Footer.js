@@ -70,8 +70,8 @@ const Footer = () => {
                       </Link>
                     </li>
                     <li>
-                      <Link to='/' className='text-decoration-none'>
-                        Term &amp; conditions
+                      <Link to='/terms-and-conditions' className='text-decoration-none'>
+                        Terms &amp; Conditions
                       </Link>
                     </li>
                     <li>
@@ -119,19 +119,7 @@ const Footer = () => {
           <div className='container'>
             <div className='text-center'>
               <p className='mb-0 f_400'>
-                © Buy-and-Sell. 2022 All rights reserved.
-              </p>
-              <p>
-                Built with <i class='fa fa-heart text-danger'></i> by{' '}
-                <strong>
-                  <a
-                    href='https://github.com/Babadinho'
-                    target='_blank'
-                    className='text-danger'
-                  >
-                    Babadinho
-                  </a>
-                </strong>
+                © 2022 All rights reserved.
               </p>
             </div>
           </div>

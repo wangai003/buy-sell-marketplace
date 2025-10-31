@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Avatar, Button, Badge } from 'antd';
 import io from 'socket.io-client';
 import { useHistory } from 'react-router';
-import { useLocation } from 'react-router-dom';
 import { isAuthenticated } from '../actions/auth';
 import {
   reduxUser,
@@ -12,6 +11,7 @@ import {
   setMsgToUnread,
 } from '../actions/user';
 import { useDispatch, useSelector } from 'react-redux';
+import CurrencySelector from './CurrencySelector';
 // import NProgress from 'nprogress';
 
 const NavMenu = () => {
@@ -96,21 +96,28 @@ const NavMenu = () => {
     <div className='container-fluid p-0'>
       <div className='navmenu navbar navbar-expand-sm navbar-dark px-sm-5 container-fluid nav-shadow'>
         <Link className='navbar-brand' to='/'>
-          Buy-and-Sell
+          <img
+            src="https://files.catbox.moe/r7gvct.png"
+            alt="Logo"
+            style={{ height: '40px', width: 'auto' }}
+          />
         </Link>
         <ul className='navbar-nav align-items-center ms-auto'>
-          <li className='nav-item ml-5 px-2'>
-            <Button
-              type='primary'
-              danger
-              size='large'
-              shape='round'
-              onClick={handleSell}
-              className='sellButton ml-5'
-            >
-              Sell a Product
-            </Button>
-          </li>
+           <li className='nav-item ml-5 px-2'>
+             <Button
+               type='primary'
+               danger
+               size='large'
+               shape='round'
+               onClick={handleSell}
+               className='sellButton ml-5'
+             >
+               Sell a Product
+             </Button>
+           </li>
+           <li className='nav-item ml-5 px-2'>
+             <CurrencySelector />
+           </li>
           {user && token && (
             <>
               <div class='nav-item ml-5 px-2 dropdown'>
@@ -166,11 +173,15 @@ const NavMenu = () => {
                       <div>
                         {userInfo.unreadMessage && (
                           <span
-                            class='badge bg-danger'
-                            style={{ fontSize: '7px' }}
-                          >
-                            New
-                          </span>
+                            style={{
+                              display: 'inline-block',
+                              width: '8px',
+                              height: '8px',
+                              backgroundColor: 'red',
+                              borderRadius: '50%',
+                              marginLeft: '5px',
+                            }}
+                          ></span>
                         )}
                       </div>
                     </div>

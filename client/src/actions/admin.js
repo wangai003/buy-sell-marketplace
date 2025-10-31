@@ -59,8 +59,19 @@ export const unBanUser = async (userId, admin, token) =>
 export const addCategory = async (category) =>
   await axios.post(`${process.env.REACT_APP_API}/admin/add-category`, category);
 
+export const createNestedCategory = async (categoryData) =>
+  await axios.post(`${process.env.REACT_APP_API}/admin/create-nested-category`, categoryData);
+
 export const allCategories = async () => {
   return await axios.get(`${process.env.REACT_APP_API}/admin/categories`);
+};
+
+export const getCategoryHierarchy = async () => {
+  return await axios.get(`${process.env.REACT_APP_API}/admin/categories/hierarchy`);
+};
+
+export const getCategoriesByLevel = async (params) => {
+  return await axios.get(`${process.env.REACT_APP_API}/admin/categories/level`, { params });
 };
 
 export const getCategory = async (categoryId) =>

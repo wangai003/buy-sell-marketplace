@@ -141,45 +141,106 @@ const EditProduct = ({ match }) => {
   };
 
   const editProductForm = () => (
-    <div className='card rounded-0 pb-5 card-shadow'>
-      <div className='card-header p-4'>
-        <h2 className='text-center'>
+    <div style={{
+      background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+      borderRadius: '10px',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      padding: '20px',
+      margin: '20px 0',
+      transition: 'transform 0.3s ease',
+      ':hover': {
+        transform: 'translateY(-5px)'
+      }
+    }}>
+      <div style={{
+        padding: '20px',
+        background: 'rgba(255,255,255,0.9)',
+        borderRadius: '10px',
+        marginBottom: '20px'
+      }}>
+        <h2 style={{
+          textAlign: 'center',
+          color: '#FFFFFF',
+          textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
+        }}>
           <Link
             to='/user/dashboard'
-            className='text-decoration-none text-dark1'
+            style={{ color: '#FFFFFF', textDecoration: 'none' }}
           >
             <Tooltip title='Back to Dashboard'>
-              <span className='category-span'>
+              <span style={{ marginRight: '10px' }}>
                 <i class='fas fa-arrow-circle-left'></i>
               </span>
             </Tooltip>
           </Link>
-          <i class='fas fa-user-edit'></i> Edit Product
+          <i class='fas fa-user-edit' style={{ marginRight: '10px' }}></i> Edit Product
         </h2>
       </div>
-      <div className='card-body'>
-        <form onSubmit={handleSubmit}>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>Product Name*</label>
+      <div style={{
+        background: 'rgba(255,255,255,0.9)',
+        padding: '20px',
+        borderRadius: '10px'
+      }}>
+        <form onSubmit={handleSubmit} style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px'
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            <label style={{
+              marginBottom: '5px',
+              color: '#333',
+              fontWeight: 'bold'
+            }}>Product Name*</label>
             <input
               type='text'
-              className='form-control shadow-none rounded-0'
+              style={{
+                padding: '10px',
+                border: '2px solid #FFD700',
+                borderRadius: '5px',
+                background: '#FFFFFF',
+                color: '#333',
+                transition: 'border-color 0.3s ease',
+                ':focus': {
+                  outline: 'none',
+                  borderColor: '#33b27b'
+                }
+              }}
               placeholder='Enter product name'
               value={name}
               onChange={handleChange('name')}
             />
           </div>
-          <div className='mx-auto col-md-8'>
-            <h6>Upload Images*</h6>
-            <div className='form-group mb-3 d-flex'>
+          <div style={{
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            <h6 style={{ color: '#FFFFFF', textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>Upload Images*</h6>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
               <div>
                 <label
-                  className='btn btn-secondary rounded-circle p-0'
-                  style={{ fontSize: '30px' }}
+                  style={{
+                    borderRadius: '50%',
+                    background: '#33b27b',
+                    color: '#FFFFFF',
+                    padding: '20px',
+                    cursor: 'pointer',
+                    transition: 'background 0.3s ease',
+                    ':hover': {
+                      background: '#28a745'
+                    }
+                  }}
                 >
-                  <div>
-                    <i class='fas fa-plus fa-1x p-4'></i>
-                  </div>
+                  <i class='fas fa-plus fa-1x'></i>
                   <input
                     onChange={handleImageChange}
                     type='file'
@@ -191,15 +252,19 @@ const EditProduct = ({ match }) => {
                 </label>
               </div>
               {images && images.length > 0 && (
-                <div className='d-flex flex-wrap'>
+                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                   {images.map((image, i) => {
                     return (
-                      <div className='position-relative' key={i}>
+                      <div style={{ position: 'relative', margin: '5px' }} key={i}>
                         <img
                           src={image}
                           alt='preview_image'
-                          className='img img-fluid m-2'
-                          style={{ height: '75px', width: '75px' }}
+                          style={{
+                            height: '75px',
+                            width: '75px',
+                            borderRadius: '5px',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                          }}
                         />
                         <Popconfirm
                           placement='top'
@@ -208,10 +273,14 @@ const EditProduct = ({ match }) => {
                           okText='Yes'
                           cancelText='No'
                         >
-                          <span className='position-absolute end-0'>
+                          <span style={{
+                            position: 'absolute',
+                            top: '0',
+                            right: '0',
+                            cursor: 'pointer'
+                          }}>
                             <i
                               class='fas fa-times-circle text-danger'
-                              role='button'
                             ></i>
                           </span>
                         </Popconfirm>
@@ -222,11 +291,26 @@ const EditProduct = ({ match }) => {
               )}
             </div>
           </div>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <h6>Category*</h6>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            <h6 style={{ color: '#FFFFFF', textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>Category*</h6>
             <select
-              class='form-select shadow-none rounded-0'
-              aria-label='Default select example'
+              style={{
+                padding: '10px',
+                border: '2px solid #FFD700',
+                borderRadius: '5px',
+                background: '#FFFFFF',
+                color: '#333',
+                transition: 'border-color 0.3s ease',
+                ':focus': {
+                  outline: 'none',
+                  borderColor: '#33b27b'
+                }
+              }}
               onChange={handleChange('category')}
               value={category}
             >
@@ -242,11 +326,26 @@ const EditProduct = ({ match }) => {
               })}
             </select>
           </div>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <h6>Location*</h6>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            <h6 style={{ color: '#FFFFFF', textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>Location*</h6>
             <select
-              class='form-select shadow-none rounded-0'
-              aria-label='Default select example'
+              style={{
+                padding: '10px',
+                border: '2px solid #FFD700',
+                borderRadius: '5px',
+                background: '#FFFFFF',
+                color: '#333',
+                transition: 'border-color 0.3s ease',
+                ':focus': {
+                  outline: 'none',
+                  borderColor: '#33b27b'
+                }
+              }}
               onChange={handleChange('location')}
               value={location}
             >
@@ -262,22 +361,56 @@ const EditProduct = ({ match }) => {
               })}
             </select>
           </div>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>Description*</label>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            <label style={{
+              marginBottom: '5px',
+              color: '#333',
+              fontWeight: 'bold'
+            }}>Description*</label>
             <textarea
-              type='text'
-              className='form-control shadow-none rounded-0'
+              style={{
+                padding: '10px',
+                border: '2px solid #FFD700',
+                borderRadius: '5px',
+                background: '#FFFFFF',
+                color: '#333',
+                height: '100px',
+                transition: 'border-color 0.3s ease',
+                ':focus': {
+                  outline: 'none',
+                  borderColor: '#33b27b'
+                }
+              }}
               placeholder='Enter detailed description of product'
               value={description}
               onChange={handleChange('description')}
-              style={{ height: '100px' }}
             />
           </div>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <h6>Condition</h6>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            <h6 style={{ color: '#FFFFFF', textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>Condition</h6>
             <select
-              class='form-select shadow-none rounded-0'
-              aria-label='Default select example'
+              style={{
+                padding: '10px',
+                border: '2px solid #FFD700',
+                borderRadius: '5px',
+                background: '#FFFFFF',
+                color: '#333',
+                transition: 'border-color 0.3s ease',
+                ':focus': {
+                  outline: 'none',
+                  borderColor: '#33b27b'
+                }
+              }}
               onChange={handleChange('condition')}
               value={condition}
             >
@@ -289,18 +422,45 @@ const EditProduct = ({ match }) => {
               <option key={3}>Used</option>
             </select>
           </div>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>Price*</label>
-            <div className='input-group'>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            <label style={{
+              marginBottom: '5px',
+              color: '#333',
+              fontWeight: 'bold'
+            }}>Price*</label>
+            <div style={{ display: 'flex' }}>
               <span
-                class='input-group-text shadow-none rounded-0'
-                id='basic-addon1'
+                style={{
+                  padding: '10px',
+                  background: '#FFD700',
+                  color: '#FFFFFF',
+                  borderRadius: '5px 0 0 5px',
+                  border: '2px solid #FFD700'
+                }}
               >
-                ₦
+                USDC
               </span>
               <input
                 type='number'
-                className='form-control shadow-none rounded-0'
+                style={{
+                  padding: '10px',
+                  border: '2px solid #FFD700',
+                  borderLeft: 'none',
+                  borderRadius: '0 5px 5px 0',
+                  background: '#FFFFFF',
+                  color: '#333',
+                  flex: 1,
+                  transition: 'border-color 0.3s ease',
+                  ':focus': {
+                    outline: 'none',
+                    borderColor: '#33b27b'
+                  }
+                }}
                 placeholder='Enter price'
                 value={price}
                 onChange={handleChange('price')}
@@ -308,12 +468,25 @@ const EditProduct = ({ match }) => {
             </div>
           </div>
 
-          <div className='mx-auto col-md-8'>
+          <div style={{
+            maxWidth: '600px',
+            margin: '0 auto',
+            textAlign: 'center'
+          }}>
             <Button
               type='primary'
               size='large'
-              shape='round'
-              className='rounded-0'
+              style={{
+                background: 'linear-gradient(to right, #33b27b, #28a745)',
+                border: 'none',
+                color: '#FFFFFF',
+                borderRadius: '20px',
+                padding: '10px 30px',
+                transition: 'all 0.3s ease',
+                ':hover': {
+                  transform: 'scale(1.05)'
+                }
+              }}
               htmlType='submit'
             >
               Edit Product

@@ -159,6 +159,28 @@ const newFollowerNotification = async (userId, userToNotifyId) => {
   }
 };
 
+const auctionWinnerNotification = async (winnerId, productId, productName, winningBid) => {
+  try {
+    const userToNotify = await Notification.findOne({ user: winnerId });
+
+    const newNotification = {
+      type: 'auctionWinner',
+      status: 'unRead',
+      user: winnerId,
+      product: productId,
+      date: Date.now(),
+    };
+
+    await userToNotify.notifications.unshift(newNotification);
+    await userToNotify.save();
+
+    await setNotificationToRead(winnerId);
+    return;
+  } catch (error) {
+    console.error('Error creating auction winner notification:', error);
+  }
+};
+
 const removeFollowerNotification = async (userId, userToNotifyId) => {
   try {
     const user = await Notification.findOne({ user: userToNotifyId });
@@ -248,6 +270,7 @@ module.exports = {
   removeRatingNotification,
   newFollowerNotification,
   removeFollowerNotification,
+  auctionWinnerNotification,
   getUserNotifications,
   markNotificationsRead,
 };

@@ -21,7 +21,7 @@ const EditLocation = ({ match }) => {
 
   useEffect(() => {
     loadLocation();
-  }, []);
+  }, [loadLocation]);
 
   const handleChange = (e) => {
     setName(e.target.value);

@@ -97,31 +97,33 @@ const ManageUsers = () => {
 
   return (
     <>
-      <div className='row container-fluid mx-auto mt-5 profile-container'>
+      <div className='row container-fluid mx-auto mt-5 profile-container' style={{ background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)', minHeight: '100vh', padding: '20px', transition: 'all 0.3s ease' }}>
         <div className='col-md-3 mb-5'>
           <Card
             className='card-shadow'
-            style={{ width: 'auto' }}
+            style={{ width: 'auto', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', borderRadius: '8px', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
             cover={
               <Avatar
                 src={user.photo}
                 className='mx-auto mt-3 avatar-user'
                 size={130}
+                style={{ border: '3px solid #FFD700' }}
               >
                 {user.name[0]}
               </Avatar>
             }
           >
             <div className='text-center'>
-              <h5>({user.username})</h5>
+              <h5 style={{ color: '#228B22' }}>({user.username})</h5>
             </div>
             <Meta
               title={user.name}
               description={user.phone}
               className='text-center user-details'
+              style={{ color: '#228B22' }}
             />
           </Card>
-          <ul className='list-group rounded-0 profile-list card-shadow'>
+          <ul className='list-group rounded-0 profile-list card-shadow' style={{ boxShadow: '0 4px 8px rgba(0,0,0,0.1)', borderRadius: '8px', background: 'white' }}>
             <li className='list-group-item'>
               <Link
                 to='/admin/dashboard'
@@ -163,9 +165,9 @@ const ManageUsers = () => {
             </li>
           </ul>
         </div>
-        <div className='col-md-9 mb-5'>
-          <div className='card rounded-0 profile-card card-shadow'>
-            <div className='card-header profile-card p-3'>
+        <div className='col-md-9 mb-5' style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <div className='card rounded-0 profile-card card-shadow' style={{ background: 'linear-gradient(to right, #FFD700, #FFFFFF)', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', borderRadius: '8px', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
+            <div className='card-header profile-card p-3' style={{ background: '#228B22', color: 'white', borderRadius: '8px 8px 0 0' }}>
               <div className='row'>
                 <div className='col-md-8'>
                   <h2 className='text-center'>
@@ -190,14 +192,15 @@ const ManageUsers = () => {
                       placeholder='Search users'
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
+                      style={{ border: '1px solid #FFD700', borderRadius: '4px' }}
                     />
                   </div>
                 </div>
               </div>
             </div>
-            <div className='card-body'>
-              <table class='table'>
-                <thead>
+            <div className='card-body' style={{ background: 'white', borderRadius: '0 0 8px 8px' }}>
+              <table class='table' style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                <thead style={{ background: '#FFD700', color: '#228B22' }}>
                   <tr>
                     <th scope='col'>Name</th>
                     <th scope='col'>Date Joined</th>
@@ -206,11 +209,12 @@ const ManageUsers = () => {
                 </thead>
                 <tbody>
                   {pagination.map((c, i) => (
-                    <tr key={i}>
+                    <tr key={i} style={{ transition: 'background-color 0.3s ease' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                       <td>
                         <Link
                           to={`/user/${c._id}`}
                           className='text-decoration-none text-dark1'
+                          style={{ color: '#228B22' }}
                         >
                           {c.name}
                         </Link>
@@ -222,11 +226,14 @@ const ManageUsers = () => {
                         <Link
                           to={`/admin/user/edit/${c._id}`}
                           class='btn btn-info btn-sm text-white'
+                          style={{ background: '#228B22', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease' }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = '#FFD700'}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = '#228B22'}
                         >
                           Edit
                         </Link>
                         {c.role === 'banned' ? (
-                          <span class='btn btn-warning btn-sm text-white'>
+                          <span class='btn btn-warning btn-sm text-white' style={{ background: '#FFD700', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#228B22'} onMouseLeave={(e) => e.target.style.backgroundColor = '#FFD700'}>
                             <Popconfirm
                               placement='top'
                               title={`unBan ${c.name}?`}
@@ -238,7 +245,7 @@ const ManageUsers = () => {
                             </Popconfirm>
                           </span>
                         ) : (
-                          <span class='btn btn-warning btn-sm text-white'>
+                          <span class='btn btn-warning btn-sm text-white' style={{ background: '#FFD700', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#228B22'} onMouseLeave={(e) => e.target.style.backgroundColor = '#FFD700'}>
                             <Popconfirm
                               placement='top'
                               title={`Ban ${c.name}?`}
@@ -250,7 +257,7 @@ const ManageUsers = () => {
                             </Popconfirm>
                           </span>
                         )}
-                        <span class='btn btn-danger btn-sm text-white'>
+                        <span class='btn btn-danger btn-sm text-white' style={{ background: '#228B22', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#FFD700'} onMouseLeave={(e) => e.target.style.backgroundColor = '#228B22'}>
                           <Popconfirm
                             placement='top'
                             title={'Are you sure to delete this user?'}
@@ -271,6 +278,7 @@ const ManageUsers = () => {
                 onChange={loadUsers}
                 defaultCurrent={current}
                 total={userList.length}
+                style={{ marginTop: '20px', textAlign: 'center' }}
               />
             </div>
           </div>

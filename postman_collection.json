@@ -1,0 +1,399 @@
+{
+  "info": {
+    "name": "Buy-Sell Marketplace API",
+    "description": "API collection for testing the crypto payment and order system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"username\": \"testuser\",\n  \"password\": \"password123\",\n  \"phone\": \"1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('token', response.token);",
+                  "    pm.collectionVariables.set('user_id', response.user._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Test Product"
+                },
+                {
+                  "key": "description",
+                  "value": "A test product for payment testing"
+                },
+                {
+                  "key": "price",
+                  "value": "100"
+                },
+                {
+                  "key": "category",
+                  "value": "category_id_here"
+                },
+                {
+                  "key": "location",
+                  "value": "location_id_here"
+                },
+                {
+                  "key": "condition",
+                  "value": "new"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/product",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "product"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment & Orders",
+      "item": [
+        {
+          "name": "Create Payment Link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"product_id_here\",\n  \"buyerId\": \"{{user_id}}\",\n  \"sellerId\": \"seller_id_here\",\n  \"amountUSD\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment",
+                "create"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Simulate Payment Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.success\",\n  \"data\": {\n    \"orderId\": \"order_id_here\",\n    \"transactionHash\": \"0x123...\",\n    \"token\": \"SOL\",\n    \"paidAmount\": 100\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/webhook",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment",
+                "webhook"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Order Status (Seller)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"order_id_here\",\n  \"newStatus\": \"DELIVERING\",\n  \"trackingNumber\": \"TR123456\",\n  \"deliveryProvider\": \"DHL\",\n  \"estimatedDeliveryDate\": \"2025-11-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Confirm Delivery (Buyer)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"order_id_here\",\n  \"newStatus\": \"COMPLETED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Buyer's Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/buyer/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "buyer",
+                "{{user_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Seller's Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/seller/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "seller",
+                "{{user_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Pay Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/pending-pay-orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "pending-pay-orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pay Seller",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"order_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/pay-seller",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "pay-seller"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    }
+  ]
+}

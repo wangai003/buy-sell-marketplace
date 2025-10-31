@@ -125,13 +125,59 @@ const RateUser = ({ match, children }) => {
     }
   };
 
+  const styles = {
+    container: {
+      background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+      minHeight: '100vh',
+      padding: '20px',
+    },
+    card: {
+      backgroundColor: 'white',
+      border: '1px solid #FFD700',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s ease',
+      borderRadius: '8px',
+    },
+    cardHover: {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+    },
+    title: {
+      color: '#228B22',
+      fontSize: '1.5rem',
+    },
+    text: {
+      color: '#228B22',
+    },
+    button: {
+      background: 'linear-gradient(to right, #32CD32, #228B22)',
+      border: 'none',
+      color: 'white',
+      transition: 'all 0.3s ease',
+    },
+    buttonHover: {
+      background: 'linear-gradient(to right, #228B22, #32CD32)',
+    },
+    input: {
+      border: '1px solid #FFD700',
+      borderRadius: '4px',
+      padding: '10px',
+      width: '100%',
+      transition: 'all 0.3s ease',
+    },
+    inputFocus: {
+      borderColor: '#228B22',
+      boxShadow: '0 0 5px rgba(34, 139, 34, 0.5)',
+    },
+  };
+
   return (
     <>
-      <div className='row container-fluid mx-auto mt-5 mb-5 profile-container'>
+      <div className='row container-fluid mx-auto mt-5 mb-5 profile-container' style={styles.container}>
         <div className='col-md-3 mb-5'>
           <Card
             className='card-shadow'
-            style={{ width: 'auto' }}
+            style={{...styles.card, width: 'auto'}}
             cover={
               <Avatar
                 src={photo}
@@ -143,22 +189,23 @@ const RateUser = ({ match, children }) => {
             }
           >
             <div className='text-center'>
-              <h5>({username})</h5>
+              <h5 style={styles.text}>({username})</h5>
             </div>
             <Meta
               title={name}
               description={phone}
               className='text-center user-details'
+              style={{color: '#228B22'}}
             />
           </Card>
         </div>
         <div className={isUser ? 'col-md-9 mb-5' : 'col-md-6 mb-5'}>
           <div
             className='card rounded-0 profile-card card-shadow'
-            style={{ display: isUser ? 'none' : '' }}
+            style={{...styles.card, display: isUser ? 'none' : ''}}
           >
-            <div className='card-header profile-card p-3'>
-              <h2 className='text-center'>
+            <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+              <h2 className='text-center' style={styles.title}>
                 <Link
                   to={`/user/${_id}`}
                   className='text-decoration-none text-dark1'
@@ -190,6 +237,7 @@ const RateUser = ({ match, children }) => {
                       }
                       value={rating}
                       onClick={handlePositive}
+                      style={thumbsUp ? styles.button : {...styles.button, background: 'transparent', color: '#32CD32', border: '1px solid #32CD32'}}
                     >
                       <i class='fas fa-thumbs-up'></i> Positive
                     </div>
@@ -201,6 +249,7 @@ const RateUser = ({ match, children }) => {
                       }
                       value={rating}
                       onClick={handleNegative}
+                      style={thumbsDown ? {...styles.button, background: 'linear-gradient(to right, #DC143C, #B22222)'} : {background: 'transparent', color: '#DC143C', border: '1px solid #DC143C'}}
                     >
                       <i class='fas fa-thumbs-down'></i> Negative
                     </div>
@@ -214,7 +263,7 @@ const RateUser = ({ match, children }) => {
                         class='form-control shadow-none'
                         aria-label='With textarea'
                         placeholder='Leave a detailed feedback'
-                        style={{ height: '130px' }}
+                        style={{...styles.input, height: '130px'}}
                         value={feedback}
                         onChange={handleChange}
                       ></textarea>
@@ -226,6 +275,7 @@ const RateUser = ({ match, children }) => {
                       size='large'
                       htmlType='submit'
                       className='form-control btn-primary'
+                      style={styles.button}
                     >
                       Submit
                     </Button>
@@ -234,14 +284,14 @@ const RateUser = ({ match, children }) => {
               </div>
             )}
           </div>
-          <div className='card rounded-0 profile-card card-shadow mt-4'>
-            <div className='card-header profile-card p-3'>
+          <div className='card rounded-0 profile-card card-shadow mt-4' style={styles.card}>
+            <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
               <div className='row'>
                 <div className='col-md-6'>
                   {isUser ? (
-                    <h3 className='text-center text-lg-start'>Your Ratings</h3>
+                    <h3 className='text-center text-lg-start' style={styles.title}>Your Ratings</h3>
                   ) : (
-                    <h4 className='text-center text-lg-start'>User Ratings</h4>
+                    <h4 className='text-center text-lg-start' style={styles.title}>User Ratings</h4>
                   )}
                 </div>
                 <div className='col-md-6'>
@@ -358,10 +408,10 @@ const RateUser = ({ match, children }) => {
           className='col-md-3 mb-5'
           style={{ display: isUser ? 'none' : '' }}
         >
-          <div className='card card-shadow rounded-0'>
+          <div className='card card-shadow rounded-0' style={styles.card}>
             <div className='d-flex justify-content-center flex-column align-items-center'>
-              <i class='far fa-smile-beam fa-3x pt-3'></i>
-              <p className='text-center p-2'>
+              <i class='far fa-smile-beam fa-3x pt-3' style={styles.text}></i>
+              <p className='text-center p-2' style={styles.text}>
                 Your feedback is very important for the seller rating. Please
                 leave an honest review to help other buyers and the seller in
                 the customer attraction.

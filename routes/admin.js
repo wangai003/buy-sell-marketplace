@@ -14,6 +14,9 @@ const {
   getCategory,
   updateCategory,
   deleteCategory,
+  getCategoryHierarchy,
+  getCategoriesByLevel,
+  createNestedCategory,
   addLocation,
   allLocations,
   getLocation,
@@ -26,6 +29,9 @@ const {
   activeProducts,
   approveReport,
   rejectReport,
+  getAllOrders,
+  getPendingPayOrders,
+  paySeller,
 } = require('../controllers/admin');
 const { userProfile } = require('../controllers/user');
 // middlewares
@@ -44,7 +50,10 @@ router.post('/admin/user/delete/:userId', deleteUser);
 router.post('/admin/user/ban/:userId', banUser);
 router.post('/admin/user/unban/:userId', unbanUser);
 router.get('/admin/categories', allCategories);
+router.get('/admin/categories/hierarchy', getCategoryHierarchy);
+router.get('/admin/categories/level', getCategoriesByLevel);
 router.post('/admin/add-category', addCategory);
+router.post('/admin/create-nested-category', createNestedCategory);
 router.post('/admin/add-location', addLocation);
 router.get('/locations', allLocations);
 router.get('/admin/category/edit/:categoryId', getCategory);
@@ -59,5 +68,8 @@ router.get('/admin/pending-products', pendingProducts);
 router.get('/admin/active-products', activeProducts);
 router.post('/admin/approve-report/:productId', approveReport);
 router.post('/admin/reject-report/:productId', rejectReport);
+router.get('/admin/pending-pay-orders', getPendingPayOrders);
+router.post('/admin/pay-seller', requireSignin, paySeller);
+router.get('/admin/orders', getAllOrders);
 
 module.exports = router;

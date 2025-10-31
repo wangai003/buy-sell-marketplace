@@ -12,6 +12,16 @@ const ProductSchema = new Schema(
       ref: 'category',
       required: true,
     },
+    subcategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'category',
+      required: true,
+    },
+    element: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'category',
+      required: true,
+    },
     location: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'location',
@@ -36,6 +46,28 @@ const ProductSchema = new Schema(
       type: Number,
       required: true,
     },
+    isAuction: {
+      type: Boolean,
+      default: false,
+    },
+    startingBid: {
+      type: Number,
+    },
+    currentBid: {
+      type: Number,
+    },
+    endTime: {
+      type: Date,
+    },
+    duration: {
+      type: Number, // in hours
+    },
+    bids: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'bid',
+      },
+    ],
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'user',
@@ -43,7 +75,7 @@ const ProductSchema = new Schema(
     status: {
       type: String,
       default: 'pending',
-      enum: ['pending', 'active', 'closed'],
+      enum: ['pending', 'active', 'closed', 'sold', 'ended_no_bids', 'auction_closed'],
     },
     reports: [
       {

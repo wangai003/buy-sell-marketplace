@@ -22,3 +22,14 @@ export const isAuthenticated = () => {
     return false;
   }
 };
+
+export const getToken = () => {
+  if (typeof window !== 'undefined') {
+    const authData = localStorage.getItem('buynsell');
+    if (authData) {
+      const parsed = JSON.parse(authData);
+      return parsed.token;
+    }
+  }
+  return null;
+};

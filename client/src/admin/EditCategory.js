@@ -21,7 +21,7 @@ const EditCategory = ({ match }) => {
 
   useEffect(() => {
     loadCategory();
-  }, []);
+  }, [loadCategory]);
 
   const handleChange = (e) => {
     setName(e.target.value);

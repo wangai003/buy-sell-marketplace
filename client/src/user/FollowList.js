@@ -83,9 +83,56 @@ const FollowList = () => {
     }
   };
 
+  const styles = {
+    container: {
+      background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+      minHeight: '100vh',
+      padding: '20px',
+    },
+    card: {
+      backgroundColor: 'white',
+      border: '1px solid #FFD700',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s ease',
+      borderRadius: '8px',
+    },
+    cardHover: {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+    },
+    title: {
+      color: '#228B22',
+      fontSize: '1.5rem',
+    },
+    text: {
+      color: '#228B22',
+    },
+    button: {
+      background: 'linear-gradient(to right, #32CD32, #228B22)',
+      border: 'none',
+      color: 'white',
+      transition: 'all 0.3s ease',
+    },
+    buttonHover: {
+      background: 'linear-gradient(to right, #228B22, #32CD32)',
+    },
+    listItem: {
+      border: '1px solid #FFD700',
+      borderRadius: '8px',
+      marginBottom: '10px',
+      padding: '15px',
+      transition: 'all 0.3s ease',
+      cursor: 'pointer',
+    },
+    listItemHover: {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+    },
+  };
+
   return (
     <>
-      <div className='row container-fluid mx-auto mt-5 profile-container'>
+      <div className='row container-fluid mx-auto mt-5 profile-container' style={styles.container}>
         <UserSideBar
           followers={followers}
           following={following}
@@ -94,9 +141,9 @@ const FollowList = () => {
           negativeRatings={negativeRatings}
         />
         <div className='col-md-9 mb-5'>
-          <div className='card rounded-0 mb-4 profile-card card-shadow'>
-            <div className='d-flex justify-content-between card-header profile-card p-3'>
-              <h2 className='text-center'>Following</h2>
+          <div className='card rounded-0 mb-4 profile-card card-shadow' style={styles.card}>
+            <div className='d-flex justify-content-between card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+              <h2 className='text-center' style={styles.title}>Following</h2>
             </div>
             {following.length === 0 && (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -105,10 +152,16 @@ const FollowList = () => {
               <div className='card-body'>
                 {pagination2.map((p, i) => {
                   return (
-                    <ul className='list-group mb-3 rounded-0'>
+                    <div
+                      className='list-group mb-3 rounded-0'
+                      key={i}
+                      style={styles.listItem}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
                       <li
                         class='list-group-item d-flex justify-content-between border-top-0 border-end-0 border-start-0'
-                        key={i}
+                        style={{border: 'none', background: 'transparent'}}
                       >
                         <div className='me-3'>
                           <Link
@@ -121,7 +174,7 @@ const FollowList = () => {
                           </Link>
                         </div>
                         <div class='ms-2 me-auto'>
-                          <div class='fw-bold'>
+                          <div class='fw-bold' style={styles.text}>
                             <Link
                               to={`/user/${p._id}`}
                               className='text-decoration-none text-dark text-dark-hover'
@@ -129,7 +182,7 @@ const FollowList = () => {
                               {p.name}
                             </Link>
                           </div>
-                          <div className=''>
+                          <div className='' style={styles.text}>
                             <span className='me-3 d-flex'>
                               Followers: {p.followers.length}
                             </span>
@@ -143,11 +196,14 @@ const FollowList = () => {
                           danger
                           shape='round'
                           onClick={() => handleUnfollow(p._id)}
+                          style={styles.button}
+                          onMouseEnter={(e) => e.target.style.background = 'linear-gradient(to right, #228B22, #32CD32)'}
+                          onMouseLeave={(e) => e.target.style.background = 'linear-gradient(to right, #32CD32, #228B22)'}
                         >
                           Unfollow
                         </Button>
                       </li>
-                    </ul>
+                    </div>
                   );
                 })}
                 <Pagination
@@ -159,9 +215,9 @@ const FollowList = () => {
               </div>
             )}
           </div>
-          <div className='card rounded-0 profile-card card-shadow mb-4'>
-            <div className='d-flex justify-content-between card-header profile-card p-3'>
-              <h2 className='text-center'>Followers</h2>
+          <div className='card rounded-0 profile-card card-shadow mb-4' style={styles.card}>
+            <div className='d-flex justify-content-between card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+              <h2 className='text-center' style={styles.title}>Followers</h2>
             </div>
             {followers.length === 0 && (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -170,10 +226,16 @@ const FollowList = () => {
               <div className='card-body'>
                 {pagination.map((p, i) => {
                   return (
-                    <ul class='list-group mb-3 rounded-0'>
+                    <div
+                      class='list-group mb-3 rounded-0'
+                      key={i}
+                      style={styles.listItem}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
                       <li
                         class='list-group-item d-flex justify-content-between align-items-start border-top-0 border-end-0 border-start-0'
-                        key={i}
+                        style={{border: 'none', background: 'transparent'}}
                       >
                         <div className='me-3'>
                           <Link
@@ -190,9 +252,9 @@ const FollowList = () => {
                             to={`/user/${p._id}`}
                             className='text-decoration-none text-dark text-dark-hover'
                           >
-                            <div class='fw-bold'>{p.name}</div>
+                            <div class='fw-bold' style={styles.text}>{p.name}</div>
                           </Link>
-                          <div className=''>
+                          <div className='' style={styles.text}>
                             <span className='me-3 d-flex'>
                               Followers: {p.followers.length}
                             </span>
@@ -207,12 +269,15 @@ const FollowList = () => {
                             danger
                             shape='round'
                             onClick={() => handleFollow(p._id)}
+                            style={styles.button}
+                            onMouseEnter={(e) => e.target.style.background = 'linear-gradient(to right, #228B22, #32CD32)'}
+                            onMouseLeave={(e) => e.target.style.background = 'linear-gradient(to right, #32CD32, #228B22)'}
                           >
                             Follow
                           </Button>
                         )}
                       </li>
-                    </ul>
+                    </div>
                   );
                 })}
                 <Pagination

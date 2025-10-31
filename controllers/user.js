@@ -37,7 +37,7 @@ exports.reduxUser = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email, username, phone, location, photo, _id } = req.body;
+    const { name, email, username, phone, location, photo, wallet, _id } = req.body;
 
     //Validate User
     const profileOwner = req.params.userId === _id;
@@ -80,6 +80,7 @@ exports.updateProfile = async (req, res) => {
         !photo || photo.substring(11, 21) === 'cloudinary'
           ? undefined
           : imageUrl.public_id,
+      wallet: wallet,
     };
 
     for (let prop in updatedUser)
@@ -99,6 +100,7 @@ exports.updateProfile = async (req, res) => {
       photo: user.photo,
       role: user.role,
       location: user.location,
+      wallet: user.wallet,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });

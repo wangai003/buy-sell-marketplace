@@ -7,7 +7,6 @@ export const addProduct = async (userId, product, token) =>
     {
       headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
     }
@@ -118,3 +117,33 @@ export const reportProduct = async (productId, report) =>
 
 export const getReportedProducts = async () =>
   await axios.get(`${process.env.REACT_APP_API}/reported-products`);
+
+export const createPayment = async (paymentData, token) =>
+  await axios.post(`${process.env.REACT_APP_API}/payment/create`, paymentData, {
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+export const createNowpaymentsInvoice = async (payload, token) =>
+  await axios.post(`${process.env.REACT_APP_API}/payment/nowpayments/invoice`, payload, {
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+export const placeBid = async (productId, bidData, token) =>
+  await axios.post(`${process.env.REACT_APP_API}/product/${productId}/bid`, bidData, {
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+export const getBids = async (productId) =>
+  await axios.get(`${process.env.REACT_APP_API}/product/${productId}/bids`);

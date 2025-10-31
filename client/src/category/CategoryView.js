@@ -77,7 +77,7 @@ const CategoryView = ({ match }) => {
     loadUser();
     loadLocations();
     loadFilteredResults(1);
-  }, [price, condition, sortBy, location, favourite]);
+  }, [price, condition, sortBy, location, favourite, loadFilteredResults, loadUser]);
 
   // check for Active products, if none display Empty
   let checkActive = products.some(function (product) {
@@ -112,9 +112,9 @@ const CategoryView = ({ match }) => {
   };
 
   //format currency
-  Number.prototype.format = function (n, x) {
+  const formatNumber = (num, n = 0, x = 3) => {
     var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
-    return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
+    return num.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
   };
 
   const handleLocation = () => {
@@ -269,7 +269,7 @@ const CategoryView = ({ match }) => {
               <div className='form-group d-flex justify-content-center align-items-center'>
                 <div class='input-group input-group-sm me-2'>
                   <span class='input-group-text' id='inputGroup-sizing-sm'>
-                    ₦
+                    USDC
                   </span>
                   <input
                     type='number'
@@ -282,7 +282,7 @@ const CategoryView = ({ match }) => {
                 <div>to</div>
                 <div class='input-group input-group-sm ms-2'>
                   <span class='input-group-text' id='inputGroup-sizing-sm'>
-                    ₦
+                    USDC
                   </span>
                   <input
                     type='number'
@@ -426,7 +426,7 @@ const CategoryView = ({ match }) => {
                                 </Link>
                                 <span>
                                   <h6 className='text-success'>
-                                    ₦{parseInt(p.price).format()}
+                                    USDC{formatNumber(parseInt(p.price))}
                                   </h6>
                                 </span>
                               </div>
@@ -588,7 +588,7 @@ const CategoryView = ({ match }) => {
                             </Link>
                             <span>
                               <h6 className='text-success'>
-                                ₦{parseInt(p.price).format()}
+                                USDC{formatNumber(parseInt(p.price))}
                               </h6>
                             </span>
                           </div>

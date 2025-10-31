@@ -35,6 +35,12 @@ const MobileMenuDrawer = ({ categories }) => {
         // closable={false}
         onClose={handleCategoryClose}
         visible={categoryVisible}
+        style={{
+          background: 'linear-gradient(to bottom, var(--primary-gold), var(--secondary-white))',
+        }}
+        bodyStyle={{
+          background: 'linear-gradient(to bottom, var(--primary-gold), var(--secondary-white))',
+        }}
       >
         {categories.map((c, i) => {
           return (

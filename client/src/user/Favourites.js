@@ -77,9 +77,47 @@ const Favourites = () => {
     return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
   };
 
+  const styles = {
+    container: {
+      background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+      minHeight: '100vh',
+      padding: '20px',
+    },
+    card: {
+      backgroundColor: 'white',
+      border: '1px solid #FFD700',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s ease',
+      borderRadius: '8px',
+    },
+    cardHover: {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+    },
+    title: {
+      color: '#228B22',
+      fontSize: '1.5rem',
+    },
+    text: {
+      color: '#228B22',
+    },
+    button: {
+      background: 'linear-gradient(to right, #32CD32, #228B22)',
+      border: 'none',
+      color: 'white',
+      transition: 'all 0.3s ease',
+    },
+    grid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+      gap: '20px',
+      padding: '20px',
+    },
+  };
+
   return (
     <>
-      <div className='row container-fluid mx-auto mt-5 profile-container'>
+      <div className='row container-fluid mx-auto mt-5 profile-container' style={styles.container}>
         <UserSideBar
           followers={followers}
           following={following}
@@ -88,9 +126,9 @@ const Favourites = () => {
           negativeRatings={negativeRatings}
         />
         <div className='col-md-9 mb-5'>
-          <div className='card rounded-0 profile-card card-shadow'>
-            <div className='d-flex justify-content-between card-header profile-card p-3'>
-              <h2 className='text-center d-flex align-items-center'>
+          <div className='card rounded-0 profile-card card-shadow' style={styles.card}>
+            <div className='d-flex justify-content-between card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+              <h2 className='text-center d-flex align-items-center' style={styles.title}>
                 <span>
                   <Link
                     to='/user/dashboard'
@@ -110,12 +148,15 @@ const Favourites = () => {
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
             )}
             {favourites.length > 0 && (
-              <div className='card-body'>
+              <div style={styles.grid}>
                 {pagination.map((p, i) => {
                   return (
                     <div
                       class='card rounded-0 mb-3 product-card desktop-product-view'
                       key={i}
+                      style={{...styles.card, cursor: 'pointer'}}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                     >
                       <div class='row g-0'>
                         <div class='col-md-3 product-img'>
@@ -147,6 +188,8 @@ const Favourites = () => {
                                   height: '28px',
                                   borderRadius: '50%',
                                   border: '1px solid rgba(0, 0, 0, 0.125)',
+                                  background: 'linear-gradient(to right, #32CD32, #228B22)',
+                                  color: 'white',
                                 }}
                               >
                                 <i class='fas fa-star'></i>
@@ -165,7 +208,7 @@ const Favourites = () => {
                               </Link>
                               <span>
                                 <h6 className='text-success'>
-                                  ₦{parseInt(p.price).format()}
+                                  USDC{parseInt(p.price).format()}
                                 </h6>
                               </span>
                             </div>
@@ -183,7 +226,6 @@ const Favourites = () => {
                                     style={{
                                       backgroundColor: '#eef2f4',
                                       color: '#303a4b',
-                                      // fontSize: '14px',
                                     }}
                                   >
                                     {p.category.name}
@@ -256,7 +298,7 @@ const Favourites = () => {
                     return (
                       <div
                         className='card card-shadow rounded-0 mb-3 mobile-product-view d-flex flex-row'
-                        style={{ height: '12.43rem' }}
+                        style={{ height: '12.43rem', ...styles.card }}
                       >
                         <div className='product-img-mobile'>
                           <div className='product-img-mobile'>
@@ -291,6 +333,8 @@ const Favourites = () => {
                                   height: '28px',
                                   borderRadius: '50%',
                                   border: '1px solid rgba(0, 0, 0, 0.125)',
+                                  background: 'linear-gradient(to right, #32CD32, #228B22)',
+                                  color: 'white',
                                 }}
                               >
                                 <i class='fas fa-star'></i>
@@ -312,15 +356,10 @@ const Favourites = () => {
                             </Link>
                             <span>
                               <h6 className='text-success'>
-                                ₦{parseInt(p.price).format()}
+                                USDC{parseInt(p.price).format()}
                               </h6>
                             </span>
                           </div>
-                          {/* <small>
-                            <p class='card-text mobile-card-desc text-muted'>
-                              {p.description.substring(0, 30)}..
-                            </p>
-                          </small> */}
                           <div className='mt-2 mb-2'>
                             <div>
                               <span>

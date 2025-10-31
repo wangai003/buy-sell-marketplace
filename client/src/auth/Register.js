@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import RegisterForm from '../components/RegisterForm';
 // import axios from 'axios';
-import { toast } from 'react-toastify';
 import { message } from 'antd';
 import { register } from '../actions/auth';
 

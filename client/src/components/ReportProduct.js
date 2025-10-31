@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Modal, message } from 'antd';
 import { reportProduct } from '../actions/product';
 import { isAuthenticated } from '../actions/auth';
@@ -13,14 +13,12 @@ const ReportProduct = ({ product, productId, productReports, setReported }) => {
     author: user._id,
   });
 
-  const { reason, details } = report;
-
   const handleModal = () => {
     setShowModal(true);
   };
 
   const handleReport = async () => {
-    if (reason === '') {
+    if (report.reason === '') {
       return message.error('Select a reason for this report');
     }
     const res = await reportProduct(productId, report);

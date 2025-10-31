@@ -44,9 +44,21 @@ const RelatedProducts = ({ category }) => {
   };
 
   return (
-    <div>
+    <div style={{
+      background: 'linear-gradient(to right, #FFD700, #FFFFFF)',
+      borderRadius: '10px',
+      padding: '20px',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      marginTop: '20px'
+    }}>
       <div>
-        <h3 className='text-dark1 mb-3 mt-3 ms-2' style={{ fontSize: '22px' }}>
+        <h3 style={{
+          fontSize: '22px',
+          color: '#FFFFFF',
+          textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+          marginBottom: '20px',
+          marginLeft: '10px'
+        }}>
           Related Products
         </h3>
       </div>
@@ -54,8 +66,24 @@ const RelatedProducts = ({ category }) => {
         {related.map((p, i) => {
           if (p.status === 'active') {
             return (
-              <div key={i}>
-                <div className='card card-shadow mb-4' style={{ width: '98%' }}>
+              <div key={i} style={{
+                transition: 'transform 0.3s ease',
+                ':hover': {
+                  transform: 'scale(1.05)'
+                }
+              }}>
+                <div style={{
+                  width: '98%',
+                  background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+                  borderRadius: '10px',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                  overflow: 'hidden',
+                  marginBottom: '20px',
+                  transition: 'transform 0.3s ease',
+                  ':hover': {
+                    transform: 'translateY(-5px)'
+                  }
+                }}>
                   <div className='product-img1'>
                     <Link
                       to={`/product/${p._id}`}
@@ -70,28 +98,45 @@ const RelatedProducts = ({ category }) => {
                         }}
                       />
                       <span className='product-img-count'>
-                        <span className='badge badge-pill opacity'>
+                        <span style={{
+                          background: '#33b27b',
+                          color: '#FFFFFF',
+                          borderRadius: '10px',
+                          padding: '2px 6px',
+                          fontSize: '12px'
+                        }}>
                           {p.images.length}
                           <i class='fas fa-images ps-1'></i>
                         </span>
                       </span>
                     </Link>
                   </div>
-                  <div className='card-body pb-0'>
+                  <div className='card-body pb-0' style={{
+                    background: 'rgba(255,255,255,0.9)',
+                    padding: '15px'
+                  }}>
                     <div className='d-flex justify-content-between flex-wrap'>
                       <Tooltip title={p.name}>
                         <Link
                           to={`/product/${p._id}`}
                           className='text-decoration-none'
                         >
-                          <p class='card-title text-dark1 card-text-title'>
+                          <p style={{
+                            color: '#333',
+                            fontWeight: 'bold',
+                            margin: '0'
+                          }}>
                             {p.name}
                           </p>
                         </Link>
                       </Tooltip>
                       <span>
-                        <p className='text-success'>
-                          ₦{parseInt(p.price).format()}
+                        <p style={{
+                          color: '#33b27b',
+                          fontWeight: 'bold',
+                          margin: '0'
+                        }}>
+                          USDC{parseInt(p.price).format()}
                         </p>
                       </span>
                     </div>
@@ -100,18 +145,19 @@ const RelatedProducts = ({ category }) => {
                         to={`/search-result?&location=${p.location._id}&category=&name=&price=&condition=`}
                         className='text-decoration-none'
                       >
-                        <small class='text-muted'>
-                          <p className='text-muted'>
+                        <small style={{ color: '#666' }}>
+                          <p style={{ margin: '0', color: '#666' }}>
                             <i class='fas fa-map-marker-alt me-2'></i>
                             {p.location.name}
                           </p>
                         </small>
                       </Link>
-                      <small class='text-muted'>
+                      <small style={{ color: '#666' }}>
                         Seller:{' '}
                         <Link
                           to={`/user/${p.author._id}`}
-                          className='text-decoration-none text-dark1'
+                          className='text-decoration-none'
+                          style={{ color: '#33b27b' }}
                         >
                           {p.author.name}
                         </Link>

@@ -56,43 +56,47 @@ const UpdatePassword = ({ match }) => {
     }
   };
 
+
   const updatePasswordForm = () => (
-    <div className='card rounded-0 pb-5 card-shadow'>
-      <div className='card-header p-4'>
-        <h2 className='text-center'>
+    <div className='card rounded-0 pb-5 card-shadow' style={styles.card}>
+      <div className='card-header p-4' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+        <h2 className='text-center' style={styles.title}>
           <i class='fas fa-user-edit'></i> Update your password
         </h2>
       </div>
       <div className='card-body'>
         <form onSubmit={handleSubmit}>
           <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>Old Password</label>
+            <label className='form-label' style={styles.text}>Old Password</label>
             <input
               type='password'
               className='form-control shadow-none rounded-0'
-              placeholder='Enter old passoword'
+              placeholder='Enter old password'
               value={oldPassword}
               onChange={handleChange('oldPassword')}
+              style={styles.input}
             />
           </div>
           <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>New Password</label>
+            <label className='form-label' style={styles.text}>New Password</label>
             <input
               type='password'
               className='form-control shadow-none rounded-0'
-              placeholder='Enter new passoword'
+              placeholder='Enter new password'
               value={password}
               onChange={handleChange('password')}
+              style={styles.input}
             />
           </div>
           <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>Confirm New Password</label>
+            <label className='form-label' style={styles.text}>Confirm New Password</label>
             <input
               type='password'
               className='form-control shadow-none rounded-0'
-              placeholder='Re-type new passoword'
+              placeholder='Re-type new password'
               value={newPasswordConfirm}
               onChange={handleChange('newPasswordConfirm')}
+              style={styles.input}
             />
           </div>
           <div className='mx-auto col-md-8'>
@@ -102,6 +106,7 @@ const UpdatePassword = ({ match }) => {
               shape='round'
               className='rounded-0'
               htmlType='submit'
+              style={styles.button}
             >
               Update Password
             </Button>
@@ -146,9 +151,55 @@ const UpdatePassword = ({ match }) => {
     </div>
   );
 
+  const styles = {
+    container: {
+      background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+      minHeight: '100vh',
+      padding: '20px',
+    },
+    card: {
+      backgroundColor: 'white',
+      border: '1px solid #FFD700',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s ease',
+      borderRadius: '8px',
+    },
+    cardHover: {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+    },
+    title: {
+      color: '#228B22',
+      fontSize: '1.5rem',
+    },
+    text: {
+      color: '#228B22',
+    },
+    button: {
+      background: 'linear-gradient(to right, #32CD32, #228B22)',
+      border: 'none',
+      color: 'white',
+      transition: 'all 0.3s ease',
+    },
+    buttonHover: {
+      background: 'linear-gradient(to right, #228B22, #32CD32)',
+    },
+    input: {
+      border: '1px solid #FFD700',
+      borderRadius: '4px',
+      padding: '10px',
+      width: '100%',
+      transition: 'all 0.3s ease',
+    },
+    inputFocus: {
+      borderColor: '#228B22',
+      boxShadow: '0 0 5px rgba(34, 139, 34, 0.5)',
+    },
+  };
+
   return (
     <>
-      <div className='container-fluid profile-settings-container mt-5'>
+      <div className='container-fluid profile-settings-container mt-5' style={styles.container}>
         <div className='row'>
           {userId !== user._id && (
             <Result
@@ -157,7 +208,7 @@ const UpdatePassword = ({ match }) => {
               subTitle='Sorry, you are not authorized to access this page.'
               extra={
                 <Link to='/'>
-                  <Button type='primary'>Back Home</Button>
+                  <Button type='primary' style={styles.button}>Back Home</Button>
                 </Link>
               }
             />

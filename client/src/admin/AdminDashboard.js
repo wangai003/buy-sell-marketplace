@@ -3,13 +3,16 @@ import { Link } from 'react-router-dom';
 import { useHistory } from 'react-router';
 import { isAuthenticated } from '../actions/auth';
 import moment from 'moment';
-import { Card, Avatar, Empty, Pagination, message } from 'antd';
+import { Card, Avatar, Empty, Pagination, message, Table, Button, Tag } from 'antd';
 import { getReportedProducts } from '../actions/product';
 import {
   productStatus,
   updateproductStatus,
   pendingProducts,
 } from '../actions/admin';
+import { getAllOrders, paySeller } from '../actions/order';
+import ManageAdvertisements from './ManageAdvertisements';
+import io from 'socket.io-client';
 
 const { Meta } = Card;
 
@@ -17,6 +20,7 @@ const AdminDashboard = () => {
   const countPerPage = 5;
   const [products, setProducts] = useState([]);
   const [reports, setReports] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [enums, setEnums] = useState({
     status: [],
     newStatus: '',
@@ -46,10 +50,30 @@ const AdminDashboard = () => {
     setReports(res.data);
   };
 
+  const loadOrders = async () => {
+    try {
+      const res = await getAllOrders();
+      setOrders(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   useEffect(() => {
     loadProducts(1);
     loadProductStatus();
     loadReports();
+    loadOrders();
+
+    // Socket.io for real-time updates
+    const socket = io(process.env.REACT_APP_API.replace('/api', ''));
+    socket.on('orderStatusChanged', (data) => {
+      loadOrders(); // Reload orders when status changes
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [newStatus]);
 
   // check for Pending products if none display Empty
@@ -75,10 +99,20 @@ const AdminDashboard = () => {
     setEnums({ ...enums, newStatus: status });
   };
 
-  //format currency
-  Number.prototype.format = function (n, x) {
+  const handlePaySeller = async (orderId) => {
+    try {
+      await paySeller(orderId, token);
+      message.success('Seller paid successfully', 4);
+      loadOrders();
+    } catch (err) {
+      console.log(err);
+      message.error('Failed to pay seller', 4);
+    }
+  };
+
+  const formatNumber = (num, n = 0, x = 3) => {
     var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
-    return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
+    return num.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
   };
 
   const history = useHistory();
@@ -158,6 +192,14 @@ const AdminDashboard = () => {
                 <i class='fas fa-list-alt'></i> Manage Products
               </Link>
             </li>
+            <li className='list-group-item'>
+              <Link
+                to='/admin/advertisements'
+                className='text-dark1 text-dark-hover text-decoration-none'
+              >
+                <i class='fas fa-ad'></i> Manage Advertisements
+              </Link>
+            </li>
             <Link
               to='/admin/reported-products'
               className='text-dark1 text-dark-hover text-decoration-none'
@@ -177,18 +219,18 @@ const AdminDashboard = () => {
             </li>
           </ul>
         </div>
-        <div className='col-md-9 mb-5'>
-          <div className='card rounded-0 profile-card card-shadow'>
-            <div className='card-header profile-card p-3'>
+        <div className='col-md-9 mb-5' style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <div className='card rounded-0 profile-card card-shadow' style={{ background: 'linear-gradient(to right, #FFD700, #FFFFFF)', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', borderRadius: '8px', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
+            <div className='card-header profile-card p-3' style={{ background: '#228B22', color: 'white', borderRadius: '8px 8px 0 0' }}>
               <h4>Products Awaiting Moderation ({pendingCount.length})</h4>
             </div>
             {!checkPending && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
             {checkPending && (
-              <div className='card-body'>
+              <div className='card-body' style={{ background: 'white', borderRadius: '0 0 8px 8px' }}>
                 {pagination.map((p, i) => {
                   if (p.status === 'pending') {
                     return (
-                      <div class='card rounded-0 mb-3 product-card' key={i}>
+                      <div class='card rounded-0 mb-3 product-card' key={i} style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderRadius: '8px', transition: 'transform 0.3s ease, box-shadow 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
                         <div class='row g-0'>
                           <div class='col-md-3 product-img'>
                             <Link
@@ -199,10 +241,10 @@ const AdminDashboard = () => {
                                 src={p.images[0]}
                                 className='img-fluid rounded-start img-horizontal'
                                 alt={p.name}
-                                style={{ height: '100%' }}
+                                style={{ height: '100%', borderRadius: '8px 0 0 8px' }}
                               />
                               <span className='product-img-count'>
-                                <span className='badge badge-pill opacity'>
+                                <span className='badge badge-pill opacity' style={{ background: '#FFD700', color: '#228B22' }}>
                                   {p.images.length}
                                   <i class='fas fa-images ps-1'></i>
                                 </span>
@@ -216,13 +258,13 @@ const AdminDashboard = () => {
                                   to={`/product/${p._id}`}
                                   className='text-decoration-none'
                                 >
-                                  <h6 class='card-title text-dark1'>
+                                  <h6 class='card-title text-dark1' style={{ color: '#228B22' }}>
                                     {p.name}
                                   </h6>
                                 </Link>
                                 <span>
                                   <h6 className='text-success'>
-                                    ₦{parseInt(p.price).format()}
+                                    USDC{formatNumber(parseInt(p.price))}
                                   </h6>
                                 </span>
                               </div>
@@ -238,9 +280,10 @@ const AdminDashboard = () => {
                                       to={`/category/${p.category._id}`}
                                       className='badge badge-pill text-muted me-2 text-decoration-none'
                                       style={{
-                                        backgroundColor: '#eef2f4',
-                                        color: '#303a4b',
-                                        // fontSize: '14px',
+                                        backgroundColor: '#FFD700',
+                                        color: '#228B22',
+                                        borderRadius: '4px',
+                                        transition: 'background-color 0.3s ease'
                                       }}
                                     >
                                       {p.category.name}
@@ -250,8 +293,9 @@ const AdminDashboard = () => {
                                     <div
                                       className='badge badge-pill text-muted'
                                       style={{
-                                        backgroundColor: '#eef2f4',
-                                        color: '#303a4b',
+                                        backgroundColor: '#FFD700',
+                                        color: '#228B22',
+                                        borderRadius: '4px'
                                       }}
                                     >
                                       {p.condition}
@@ -265,29 +309,28 @@ const AdminDashboard = () => {
                                       aria-label='Default select example'
                                       style={{
                                         padding: '.2rem 2.25rem .2rem .75rem',
+                                        border: '1px solid #FFD700',
+                                        borderRadius: '4px'
                                       }}
                                       onChange={(e) =>
                                         handleStatusChange(e, p._id)
                                       }
                                     >
                                       <option>{p.status}</option>
-                                      {status.map((s, i) => {
-                                        return (
-                                          <option
-                                            key={i}
-                                            value={s}
-                                            className='text-capitalize'
-                                          >
-                                            {s}
-                                          </option>
-                                        );
-                                      })}
+                                      {status.map((s, i) => (
+                                        <option key={i} value={s} className='text-capitalize'>
+                                          {s}
+                                        </option>
+                                      ))}
                                     </select>
                                   </span>
                                   <span className='ps-2'>
                                     <Link
                                       to={`/edit-product/${p._id}`}
                                       class='btn btn-primary btn-sm text-white pt-0 pb-0'
+                                      style={{ background: '#228B22', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease' }}
+                                      onMouseEnter={(e) => e.target.style.backgroundColor = '#FFD700'}
+                                      onMouseLeave={(e) => e.target.style.backgroundColor = '#228B22'}
                                     >
                                       Edit
                                     </Link>
@@ -320,15 +363,94 @@ const AdminDashboard = () => {
                       </div>
                     );
                   }
+                  return null;
                 })}
                 <Pagination
                   pageSize={countPerPage}
                   onChange={loadProducts}
                   defaultCurrent={current}
                   total={products.length}
+                  style={{ marginTop: '20px', textAlign: 'center' }}
                 />
               </div>
             )}
+          </div>
+
+          {/* Orders Management */}
+          <div className='card rounded-0 profile-card card-shadow mt-4' style={{ background: 'linear-gradient(to right, #FFD700, #FFFFFF)', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', borderRadius: '8px', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
+            <div className='card-header profile-card p-3' style={{ background: '#228B22', color: 'white', borderRadius: '8px 8px 0 0' }}>
+              <h4>All Orders</h4>
+            </div>
+            <div className='card-body' style={{ background: 'white', borderRadius: '0 0 8px 8px' }}>
+              <Table
+                dataSource={orders}
+                columns={[
+                  {
+                    title: 'Product',
+                    dataIndex: 'productName',
+                    key: 'productName',
+                  },
+                  {
+                    title: 'Buyer',
+                    dataIndex: 'buyerName',
+                    key: 'buyerName',
+                  },
+                  {
+                    title: 'Seller',
+                    dataIndex: 'sellerName',
+                    key: 'sellerName',
+                  },
+                  {
+                    title: 'Amount',
+                    dataIndex: 'paidAmount',
+                    key: 'paidAmount',
+                    render: (amount) => amount ? `$${amount}` : 'N/A',
+                  },
+                  {
+                    title: 'Completed',
+                    dataIndex: 'completedAt',
+                    key: 'completedAt',
+                    render: (date) => date ? moment(date).format('MMM DD, YYYY') : 'No',
+                  },
+                  {
+                    title: 'Status',
+                    dataIndex: 'status',
+                    key: 'status',
+                    render: (status) => (
+                      <Tag color={
+                        status === 'PAID' ? 'green' :
+                        status === 'COMPLETED' ? 'blue' :
+                        status === 'DELIVERING' ? 'orange' :
+                        status === 'PENDING' ? 'yellow' : 'red'
+                      }>
+                        {status}
+                      </Tag>
+                    ),
+                  },
+                  {
+                    title: 'Pay',
+                    key: 'pay',
+                    render: (_, record) => (
+                      record.status === 'PENDING_PAY' ? (
+                        <Button
+                          type="primary"
+                          size="small"
+                          onClick={() => handlePaySeller(record._id)}
+                          style={{ background: '#228B22', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease' }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = '#FFD700'}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = '#228B22'}
+                        >
+                          Pay
+                        </Button>
+                      ) : null
+                    ),
+                  },
+                ]}
+                pagination={false}
+                scroll={{ x: 800 }}
+                style={{ borderRadius: '8px' }}
+              />
+            </div>
           </div>
           <br />
         </div>

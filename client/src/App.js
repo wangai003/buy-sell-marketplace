@@ -42,9 +42,12 @@ import Favourites from './user/Favourites';
 import FollowList from './user/FollowList';
 import ViewProduct from './products/ViewProduct';
 import SearchResult from './components/SearchResult';
+import AllProductsPage from './components/AllProducts';
+import ManageAdvertisements from './admin/ManageAdvertisements';
 import UserNotifications from './notifications/UserNotifications';
 import ChatList from './messages/ChatList';
 import Chat from './messages/Chat';
+import TermsAndConditions from './components/TermsAndConditions';
 
 function App() {
   const { user } = isAuthenticated();
@@ -64,9 +67,12 @@ function App() {
           component={user ? UserDashboard : Register}
         />
         <Route exact path='/search-result' component={SearchResult} />
+        <Route exact path='/all-products' component={AllProductsPage} />
         <Route exact path='/category/:categoryId' component={CategoryView} />
         <Route exact path='/product/:productId' component={ViewProduct} />
+        <Route exact path='/terms-and-conditions' component={TermsAndConditions} />
         <PrivateRoute exact path='/user/dashboard' component={UserDashboard} />
+        <PrivateRoute exact path='/user/pending-products' component={UserDashboard} />
         <PrivateRoute
           exact
           path='/user/notifications'
@@ -99,6 +105,7 @@ function App() {
         <AdminRoute exact path='/admin/add-category' component={AddCategory} />
         <AdminRoute exact path='/admin/add-location' component={AddLocation} />
         <AdminRoute exact path='/admin/all-products' component={AllProducts} />
+        <AdminRoute exact path='/admin/advertisements' component={ManageAdvertisements} />
         <AdminRoute
           exact
           path='/admin/category/edit/:categoryId'

@@ -107,13 +107,58 @@ const ViewUser = ({ match, history }) => {
     return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
   };
 
+  const styles = {
+    container: {
+      background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+      minHeight: '100vh',
+      padding: '20px',
+    },
+    card: {
+      backgroundColor: 'white',
+      border: '1px solid #FFD700',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s ease',
+      borderRadius: '8px',
+    },
+    cardHover: {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+    },
+    title: {
+      color: '#228B22',
+      fontSize: '1.5rem',
+    },
+    text: {
+      color: '#228B22',
+    },
+    button: {
+      background: 'linear-gradient(to right, #32CD32, #228B22)',
+      border: 'none',
+      color: 'white',
+      transition: 'all 0.3s ease',
+    },
+    buttonHover: {
+      background: 'linear-gradient(to right, #228B22, #32CD32)',
+    },
+    listItem: {
+      backgroundColor: 'white',
+      border: '1px solid #FFD700',
+      transition: 'all 0.3s ease',
+    },
+    listItemHover: {
+      backgroundColor: '#f8f9fa',
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+    },
+  };
+
   return (
     <>
-      <div className='row container-fluid mx-auto mt-5 mb-5 profile-container'>
+      <div className='row container-fluid mx-auto mt-5 mb-5 profile-container' style={styles.container}>
         <div className='col-md-3 mb-2'>
           <Card
             className='card-shadow'
-            style={{ width: 'auto' }}
+            style={{ width: 'auto', ...styles.card }}
             cover={
               <Avatar
                 src={photo}
@@ -125,7 +170,7 @@ const ViewUser = ({ match, history }) => {
             }
           >
             <div className='text-center'>
-              <h5>({username})</h5>
+              <h5 style={styles.text}>({username})</h5>
             </div>
             <Meta
               title={name}
@@ -141,6 +186,7 @@ const ViewUser = ({ match, history }) => {
                       danger
                       shape='round'
                       onClick={handleUnfollow}
+                      style={styles.button}
                     >
                       UNFOLLOW
                     </Button>
@@ -151,6 +197,7 @@ const ViewUser = ({ match, history }) => {
                       danger
                       shape='round'
                       onClick={handleFollow}
+                      style={styles.button}
                     >
                       FOLLOW
                     </Button>
@@ -161,23 +208,24 @@ const ViewUser = ({ match, history }) => {
                     danger
                     shape='round'
                     onClick={() => history.push(`/messages?&message=${_id}`)}
+                    style={styles.button}
                   >
                     MESSAGE
                   </Button>
                 </div>
-                <div className='d-flex justify-content-center align-items-center mt-3 bg-light'>
-                  <div className='text-dark1 m-2' style={{ fontSize: '15px' }}>
+                <div className='d-flex justify-content-center align-items-center mt-3 bg-light' style={{...styles.card, border: '1px solid #FFD700'}}>
+                  <div className='text-dark1 m-2' style={{ fontSize: '15px', color: '#228B22' }}>
                     Joined
                   </div>{' '}
-                  <span style={{ color: '#3f8600', fontSize: '15px' }}>
+                  <span style={{ color: '#228B22', fontSize: '15px' }}>
                     {moment(createdAt).fromNow()}
                   </span>
                 </div>
                 {location && location !== 'undefined' && (
-                  <div className='text-center mt-2 bg-light'>
+                  <div className='text-center mt-2 bg-light' style={{...styles.card, border: '1px solid #FFD700'}}>
                     <h6
                       className='p-1'
-                      style={{ color: 'rgba(0, 0, 0, 0.45)' }}
+                      style={{ color: '#228B22' }}
                     >
                       <i class='fas fa-map-marker-alt me-2'></i>
                       {location} State
@@ -191,7 +239,7 @@ const ViewUser = ({ match, history }) => {
                       className='text-decoration-none'
                     >
                       <div className='mt-3 d-flex justify-content-center'>
-                        <div className='btn btn-outline-success btn-sm form-control'>
+                        <div className='btn btn-outline-success btn-sm form-control' style={{border: '1px solid #FFD700', color: '#228B22'}}>
                           <i class='fas fa-thumbs-up'></i> Rate {username}
                         </div>
                       </div>
@@ -201,12 +249,12 @@ const ViewUser = ({ match, history }) => {
               </>
             )}
           </Card>
-          <ul className='list-group rounded-0 profile-list card-shadow'>
+          <ul className='list-group rounded-0 profile-list card-shadow' style={styles.card}>
             <Link
               to={`/rate/user/${_id}`}
               className='text-dark1 text-dark-hover text-decoration-none'
             >
-              <li className='list-group-item d-flex justify-content-between align-items-center text-dark1 text-dark-hover'>
+              <li className='list-group-item d-flex justify-content-between align-items-center text-dark1 text-dark-hover' style={styles.listItem}>
                 <i class='fas fa-star-half-alt me-1'></i>
                 <span className='me-auto'> Reputation</span>
                 <div className=''>
@@ -220,14 +268,14 @@ const ViewUser = ({ match, history }) => {
                 </div>
               </li>
             </Link>
-            <li className='list-group-item d-flex justify-content-between align-items-center text-dark1'>
+            <li className='list-group-item d-flex justify-content-between align-items-center text-dark1' style={styles.listItem}>
               <i class='fas fa-users me-1'></i>{' '}
               <span className='me-auto'>Followers</span>
               <span class='badge badge-pill bg-warning'>
                 {followers.length}
               </span>
             </li>
-            <li className='list-group-item d-flex justify-content-between align-items-center text-dark1'>
+            <li className='list-group-item d-flex justify-content-between align-items-center text-dark1' style={styles.listItem}>
               <i class='fas fa-th-list me-1'></i>{' '}
               <span className='me-auto'>Product Count</span>
               <span class='badge badge-pill bg-success'>{products.length}</span>
@@ -235,9 +283,9 @@ const ViewUser = ({ match, history }) => {
           </ul>
         </div>
         <div className='col-md-9'>
-          <div className='card rounded-0 profile-card card-shadow'>
-            <div className='card-header profile-card p-3'>
-              <h3>{username}'s Products</h3>
+          <div className='card rounded-0 profile-card card-shadow' style={styles.card}>
+            <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+              <h3 style={styles.title}>{username}'s Products</h3>
             </div>
             {activeProducts.length === 0 && (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -292,7 +340,7 @@ const ViewUser = ({ match, history }) => {
                               </Link>
                               <span>
                                 <h6 className='text-success'>
-                                  ₦{parseInt(p.price).format()}
+                                  USDC{parseInt(p.price).format()}
                                 </h6>
                               </span>
                             </div>
@@ -411,7 +459,7 @@ const ViewUser = ({ match, history }) => {
                             </Link>
                             <span>
                               <h6 className='text-success'>
-                                ₦{parseInt(p.price).format()}
+                                USDC{parseInt(p.price).format()}
                               </h6>
                             </span>
                           </div>

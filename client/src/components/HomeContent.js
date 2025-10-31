@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Tooltip, message } from 'antd';
+import { Tooltip, message, Badge } from 'antd';
 import { allProducts, addFavourite, removeFavourite } from '../actions/product';
 import { isAuthenticated } from '../actions/auth';
 import MobileMenuDrawer from './MobileMenuDrawer';
 import { useDispatch, useSelector } from 'react-redux';
 import { Grid } from '@nextui-org/react';
+import HierarchicalFilter from './HierarchicalFilter';
+import CountdownTimer from './CountdownTimer';
 
 const HomeContent = ({ categories }) => {
   const favourites = useSelector((state) => state.buynsellUser.favourites);
@@ -42,10 +44,9 @@ const HomeContent = ({ categories }) => {
     setFavourite(!favourite);
   };
 
-  //format currency
-  Number.prototype.format = function (n, x) {
+  const formatNumber = (num, n = 0, x = 3) => {
     var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
-    return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
+    return num.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
   };
 
   return (
@@ -53,29 +54,14 @@ const HomeContent = ({ categories }) => {
       <div className='col-md-10 mx-auto desktop-side-menu mt-5'>
         <div className='row'>
           <div className='col-md-3'>
-            <ul className='list-group card-shadow'>
-              {categories.map((c, i) => {
-                return (
-                  <Link
-                    key={i}
-                    to={`/category/${c._id}`}
-                    className='text-decoration-none'
-                  >
-                    <li className='list-group-item side-menu rounded-0 list-group-item-action d-flex justify-content-between align-items-center'>
-                      <div className='flex-column text-dark1'>
-                        {c.name}
-                        <p className='mb-1 text-muted'>
-                          <small>Products: {c.productCount}</small>
-                        </p>
-                      </div>
-                      <div className='side-arrow text-muted'>
-                        <i className='fas fa-chevron-right fa-sm'></i>
-                      </div>
-                    </li>
-                  </Link>
-                );
-              })}
-            </ul>
+            <div className='card rounded-0 profile-card card-shadow mb-3'>
+              <div className='card-header p-3'>
+                <strong>
+                  <p className='text-dark1'>Browse Categories</p>
+                </strong>
+                <HierarchicalFilter />
+              </div>
+            </div>
           </div>
           <div className='col-md-9'>
             <div className='row home-row'>
@@ -162,15 +148,43 @@ const HomeContent = ({ categories }) => {
                               >
                                 <p class='card-title text-dark1 card-text-title'>
                                   {p.name}
+                                  {p.isAuction && (
+                                    <Badge
+                                      count="AUCTION"
+                                      style={{
+                                        backgroundColor: '#f39c12',
+                                        color: 'white',
+                                        fontSize: '10px',
+                                        marginLeft: '8px'
+                                      }}
+                                    />
+                                  )}
                                 </p>
                               </Link>
                             </Tooltip>
                             <span>
-                              <p className='text-success'>
-                                ₦{parseInt(p.price).format()}
-                              </p>
+                              {p.isAuction ? (
+                                <div className='text-center'>
+                                  <p className='text-warning mb-0' style={{ fontSize: '12px' }}>
+                                    Current Bid
+                                  </p>
+                                  <p className='text-success'>
+                                    USDC{formatNumber(parseInt(p.currentBid || p.startingBid))}
+                                  </p>
+                                </div>
+                              ) : (
+                                <p className='text-success'>
+                                  USDC{formatNumber(parseInt(p.price))}
+                                </p>
+                              )}
                             </span>
                           </div>
+                          {p.isAuction && p.status === 'active' && (
+                            <div className='mt-2'>
+                              <small className="text-muted">Auction ends in:</small>
+                              <CountdownTimer endTime={p.endTime} />
+                            </div>
+                          )}
                           <span class='card-text d-flex justify-content-between mt-2'>
                             <Link
                               to={`/search-result?$location=${p.location._id}&category=&name=&price=&condition=`}
@@ -291,15 +305,43 @@ const HomeContent = ({ categories }) => {
                           >
                             <p class='card-title text-dark1 card-text-title-mobile'>
                               {p.name}
+                              {p.isAuction && (
+                                <Badge
+                                  count="AUCTION"
+                                  style={{
+                                    backgroundColor: '#f39c12',
+                                    color: 'white',
+                                    fontSize: '8px',
+                                    marginLeft: '4px'
+                                  }}
+                                />
+                              )}
                             </p>
                           </Link>
                         </Tooltip>
                         <span>
-                          <p className='text-success'>
-                            ₦{parseInt(p.price).format()}
-                          </p>
+                          {p.isAuction ? (
+                            <div className='text-center'>
+                              <p className='text-warning mb-0' style={{ fontSize: '10px' }}>
+                                Current Bid
+                              </p>
+                              <p className='text-success' style={{ fontSize: '12px' }}>
+                                USDC{formatNumber(parseInt(p.currentBid || p.startingBid))}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className='text-success'>
+                              USDC{formatNumber(parseInt(p.price))}
+                            </p>
+                          )}
                         </span>
                       </div>
+                      {p.isAuction && p.status === 'active' && (
+                        <div className='mt-1'>
+                          <small className="text-muted" style={{ fontSize: '0.7rem' }}>Ends in:</small>
+                          <CountdownTimer endTime={p.endTime} />
+                        </div>
+                      )}
                       <span class='card-text d-flex justify-content-between align-items-center mt-1'>
                         <Link
                           to={`/location/${p.location._id}`}

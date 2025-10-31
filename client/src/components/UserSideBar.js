@@ -12,6 +12,7 @@ const UserSideBar = ({
   favourites,
   positiveRatings,
   negativeRatings,
+  wallet,
 }) => {
   const { user } = isAuthenticated();
 
@@ -54,6 +55,14 @@ const UserSideBar = ({
             <h6 className='p-1' style={{ color: 'rgba(0, 0, 0, 0.45)' }}>
               <i class='fas fa-map-marker-alt me-2'></i>
               {user.location} State
+            </h6>
+          </div>
+        )}
+        {wallet && (
+          <div className='text-center mt-2 bg-light'>
+            <h6 className='p-1' style={{ color: 'rgba(0, 0, 0, 0.45)' }}>
+              <i class='fas fa-wallet me-2'></i>
+              Wallet: {wallet.substring(0, 10)}...
             </h6>
           </div>
         )}

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Select } from 'antd';
-import { useHistory } from 'react-router';
+import { useHistory, Link } from 'react-router-dom';
 import { allLocations } from '../actions/admin';
 import { allCategories } from '../actions/product';
 import HomeContent from './HomeContent';
+import CurrencySelector from './CurrencySelector';
+import AdvertisementCarousel from './AdvertisementCarousel';
 const { Search } = Input;
 const { Option } = Select;
 
@@ -57,72 +59,9 @@ const Home = () => {
   }
   return (
     <>
-      {/* header */}
-      <div className='home-header mb-3'>
-        <div className='row'>
-          <div className='col-md-8 mx-auto d-flex justify-content-center'>
-            <p className='header-text text-center me-2'>Find a product in</p>
-            <Select
-              className='header-location'
-              showSearch
-              size={'small'}
-              style={{ width: 130 }}
-              placeholder='All Nigeria'
-              optionFilterProp='children'
-              onChange={handleLocation}
-              filterOption={(input, option) =>
-                option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }
-            >
-              {locations.map((l, i) => {
-                return (
-                  <Option value={l._id} key={i}>
-                    {l.name}
-                  </Option>
-                );
-              })}
-            </Select>
-          </div>
-        </div>
-        <div className='row'>
-          <div className='col-lg-5 mx-auto'>
-            <Input.Group compact>
-              <Select
-                defaultValue='Category'
-                style={{ width: '30%' }}
-                onChange={handleCategory}
-              >
-                {categories.map((c, i) => {
-                  return (
-                    <Option value={c._id} key={i}>
-                      {c.name}
-                    </Option>
-                  );
-                })}
-              </Select>
-              <Search
-                className='shadow-none'
-                placeholder='Search a product'
-                allowClear
-                style={{ width: '70%' }}
-                enterButton='Search'
-                size='large'
-                onChange={handleSearch}
-                onSearch={handleSubmit}
-              />
-            </Input.Group>
-          </div>
-        </div>
-        {/* <div className='header-image1'>
-          <img src='/woman2.png' alt='' />
-        </div>
-        <div className='header-image2'>
-          <img src='/man.png' alt='' />
-        </div>
-        <div className='header-image3'>
-          <img src='/woman.png' alt='' />
-        </div> */}
-      </div>
+      {/* Advertisement Carousel */}
+      <AdvertisementCarousel />
+
       {/* home side menu */}
 
       <HomeContent
@@ -130,6 +69,11 @@ const Home = () => {
         locations={locations}
         handleClick={handleClick}
       />
+      <div className='text-center mt-4 mb-4'>
+        <Link to='/all-products' className='btn btn-primary'>
+          View All Products
+        </Link>
+      </div>
     </>
   );
 };

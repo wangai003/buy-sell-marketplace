@@ -25,6 +25,9 @@ const {
   reportProduct,
   getReportedProducts,
   relatedProducts,
+  placeBid,
+  getBids,
+  processEndedAuctions,
 } = require('../controllers/product');
 
 //routes
@@ -55,5 +58,8 @@ router.post('/search-results', searchResults);
 router.post('/report-product/:productId', reportProduct);
 router.get('/reported-products', getReportedProducts);
 router.get('/related-products/:categoryId', relatedProducts);
+router.post('/product/:productId/bid', requireSignin, placeBid);
+router.get('/product/:productId/bids', getBids);
+router.post('/process-ended-auctions', processEndedAuctions);
 
 module.exports = router;

@@ -5,7 +5,9 @@ import UserSideBar from '../components/UserSideBar';
 import { isAuthenticated } from '../actions/auth';
 import { viewUser, getUserProducts } from '../actions/user';
 import { closeProduct } from '../actions/product';
-import { Card, Empty, Pagination, message, Popconfirm } from 'antd';
+import { getBuyerOrders, getSellerOrders, updateOrderStatus } from '../actions/order';
+import { Card, Empty, Pagination, message, Popconfirm, Button, Table, Tag, Modal, Input, DatePicker } from 'antd';
+import io from 'socket.io-client';
 
 const { Meta } = Card;
 
@@ -18,7 +20,31 @@ const UserDashboard = () => {
     following: '',
     products: [],
     favourites: [],
+    wallet: '',
   });
+
+  const styles = {
+    container: {
+      background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+      minHeight: '100vh',
+      padding: '20px',
+    },
+    card: {
+      backgroundColor: 'white',
+      border: '1px solid #FFD700',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s ease',
+    },
+    button: {
+      background: 'linear-gradient(to right, #32CD32, #228B22)',
+      border: 'none',
+      color: 'white',
+      transition: 'all 0.3s ease',
+    },
+    text: {
+      color: '#228B22',
+    },
+  };
   const [activeProducts, setActiveProducts] = useState([]);
   const [current, setCurrent] = useState();
   const [closed, setClosed] = useState(false);
@@ -29,7 +55,17 @@ const UserDashboard = () => {
   const positiveRating = [];
   const negativeRating = [];
 
-  const { _id, products, followers, following, favourites } = values;
+  // Orders state
+  const [orders, setOrders] = useState([]);
+  const [sellerOrders, setSellerOrders] = useState([]);
+  const [orderFilter, setOrderFilter] = useState('all');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [deliveryProvider, setDeliveryProvider] = useState('');
+  const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState(null);
+
+  const { _id, products, followers, following, favourites, wallet } = values;
 
   const loadUser = async () => {
     let res = await viewUser(user._id);
@@ -50,6 +86,7 @@ const UserDashboard = () => {
       following: res.data.following,
       products: res.data.products,
       favourites: res.data.favourites,
+      wallet: res.data.wallet || '',
     });
   };
 
@@ -63,9 +100,32 @@ const UserDashboard = () => {
     console.log(res.data);
   };
 
+  const loadOrders = async () => {
+    try {
+      const buyerRes = await getBuyerOrders(user._id);
+      setOrders(buyerRes.data);
+
+      const sellerRes = await getSellerOrders(user._id);
+      setSellerOrders(sellerRes.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   useEffect(() => {
     loadUser();
     loadUserProducts(1);
+    loadOrders();
+
+    // Socket.io for real-time updates
+    const socket = io(process.env.REACT_APP_API.replace('/api', ''));
+    socket.on('orderStatusChanged', (data) => {
+      loadOrders(); // Reload orders when status changes
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [filter, closed]);
 
   const handleClose = async (productId) => {
@@ -77,6 +137,46 @@ const UserDashboard = () => {
       if (err.response.status === 400) message.error(err.response.data, 4);
     }
     setClosed(true);
+  };
+
+  const handleConfirmOrder = async (orderId) => {
+    try {
+      await updateOrderStatus(orderId, 'COMPLETED');
+      message.success('Order confirmed', 4);
+      loadOrders();
+    } catch (err) {
+      console.log(err);
+      message.error('Failed to confirm order', 4);
+    }
+  };
+
+  const handleMarkDelivering = async () => {
+    try {
+      await updateOrderStatus(selectedOrder._id, 'DELIVERING', trackingNumber, deliveryProvider, estimatedDeliveryDate);
+      message.success('Order marked as delivering', 4);
+      setIsModalVisible(false);
+      setSelectedOrder(null);
+      setTrackingNumber('');
+      setDeliveryProvider('');
+      setEstimatedDeliveryDate(null);
+      loadOrders();
+    } catch (err) {
+      console.log(err);
+      message.error('Failed to update order', 4);
+    }
+  };
+
+  const showModal = (order) => {
+    setSelectedOrder(order);
+    setIsModalVisible(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    setSelectedOrder(null);
+    setTrackingNumber('');
+    setDeliveryProvider('');
+    setEstimatedDeliveryDate(null);
   };
 
   // get Pending product count
@@ -96,7 +196,7 @@ const UserDashboard = () => {
 
   return (
     <>
-      <div className='row container-fluid mx-auto mt-5 profile-container'>
+      <div className='row container-fluid mx-auto mt-5 profile-container' style={styles.container}>
         <UserSideBar
           _id={_id}
           products={products}
@@ -105,13 +205,172 @@ const UserDashboard = () => {
           favourites={favourites}
           positiveRatings={positiveRatings}
           negativeRatings={negativeRatings}
+          wallet={wallet}
         />
         <div className='col-md-9 mb-5'>
-          <div className='card rounded-0 profile-card card-shadow'>
-            <div className='d-flex justify-content-between card-header profile-card p-3'>
-              {filter === 'active' && <h2>Active Products</h2>}
-              {filter === 'pending' && <h2>Pending Products</h2>}
-              {filter === 'closed' && <h2>Closed Products</h2>}
+          {/* Wallet Section */}
+          {!wallet && (
+            <div className='card rounded-0 profile-card card-shadow mb-4' style={styles.card}>
+              <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+                <h4 style={styles.text}>Wallet Setup</h4>
+              </div>
+              <div className='card-body'>
+                <p style={styles.text}>You haven't set up your wallet yet. Please add your wallet address to receive payments.</p>
+                <Link to={`/user/edit/${user._id}`} className='btn' style={styles.button}>
+                  Add Wallet Address
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Buyer Orders Section */}
+          <div className='card rounded-0 profile-card card-shadow mb-4' style={styles.card}>
+            <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+              <h4 style={styles.text}>My Orders (Buyer)</h4>
+            </div>
+            <div className='card-body'>
+              {orders.length === 0 ? (
+                <Empty description="No orders yet" />
+              ) : (
+                <Table
+                  dataSource={orders}
+                  columns={[
+                    {
+                      title: 'Product',
+                      dataIndex: 'productName',
+                      key: 'productName',
+                    },
+                    {
+                      title: 'Seller',
+                      dataIndex: 'sellerName',
+                      key: 'sellerName',
+                    },
+                    {
+                      title: 'Amount',
+                      dataIndex: 'price',
+                      key: 'price',
+                      render: (price, record) => `USDC${price?.format()}${record.quantity > 1 ? ` (${record.quantity}x)` : ''}`,
+                    },
+                    {
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: (status) => (
+                        <Tag color={
+                          status === 'COMPLETED' ? 'green' :
+                          status === 'DELIVERING' ? 'blue' :
+                          status === 'PENDING' ? 'orange' : 'red'
+                        }>
+                          {status}
+                        </Tag>
+                      ),
+                    },
+                    {
+                      title: 'Actions',
+                      key: 'actions',
+                      render: (_, record) => (
+                        <div>
+                          {record.status === 'DELIVERING' && (
+                            <Button
+                              type="primary"
+                              size="small"
+                              onClick={() => handleConfirmOrder(record._id)}
+                              style={styles.button}
+                            >
+                              Confirm Delivery
+                            </Button>
+                          )}
+                        </div>
+                      ),
+                    },
+                  ]}
+                  pagination={false}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Seller Orders Section */}
+          <div className='card rounded-0 profile-card card-shadow mb-4' style={styles.card}>
+            <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+              <h4 style={styles.text}>Incoming Orders (Seller)</h4>
+            </div>
+            <div className='card-body'>
+              {sellerOrders.length === 0 ? (
+                <Empty description="No incoming orders" />
+              ) : (
+                <Table
+                  dataSource={sellerOrders}
+                  columns={[
+                    {
+                      title: 'Product',
+                      dataIndex: 'productName',
+                      key: 'productName',
+                      render: (productName, record) => `${productName}${record.quantity > 1 ? ` (${record.quantity}x)` : ''}`,
+                    },
+                    {
+                      title: 'Buyer',
+                      dataIndex: 'buyerName',
+                      key: 'buyerName',
+                    },
+                    {
+                      title: 'Amount',
+                      dataIndex: 'price',
+                      key: 'price',
+                      render: (price, record) => `USDC${price?.format()}${record.quantity > 1 ? ` (${record.quantity}x)` : ''}`,
+                    },
+                    {
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: (status) => (
+                        <Tag color={
+                          status === 'PAID' ? 'green' :
+                          status === 'COMPLETED' ? 'blue' :
+                          status === 'DELIVERING' ? 'orange' :
+                          status === 'PENDING' ? 'yellow' : 'red'
+                        }>
+                          {status}
+                        </Tag>
+                      ),
+                    },
+                    {
+                      title: 'Payout',
+                      dataIndex: 'sellerPayout',
+                      key: 'sellerPayout',
+                      render: (payout) => payout ? `$${payout}` : 'Pending',
+                    },
+                    {
+                      title: 'Actions',
+                      key: 'actions',
+                      render: (_, record) => (
+                        <div>
+                          {record.status === 'PENDING' && (
+                            <Button
+                              type="primary"
+                              size="small"
+                              onClick={() => showModal(record)}
+                              style={styles.button}
+                            >
+                              Mark as Delivering
+                            </Button>
+                          )}
+                        </div>
+                      ),
+                    },
+                  ]}
+                  pagination={false}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Products Section */}
+          <div className='card rounded-0 profile-card card-shadow' style={styles.card}>
+            <div className='d-flex justify-content-between card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+              {filter === 'active' && <h2 style={styles.text}>Active Products</h2>}
+              {filter === 'pending' && <h2 style={styles.text}>Pending Products</h2>}
+              {filter === 'closed' && <h2 style={styles.text}>Closed Products</h2>}
               <ul className='nav nav-pills justify-content-end'>
                 <li
                   className={`nav-item nav-active-hover ${
@@ -123,6 +382,7 @@ const UserDashboard = () => {
                     className={`nav-link nav-tab nav-tab-item nav-active nav-margin ${
                       filter === 'active' && 'active'
                     }`}
+                    style={{...styles.button, border: 'none', color: 'white'}}
                   >
                     <small>
                       <i class='fas fa-check-circle'></i> Active (
@@ -140,6 +400,7 @@ const UserDashboard = () => {
                     className={`nav-link nav-tab nav-pending nav-tab-item nav-margin ${
                       filter === 'pending' && 'active'
                     }`}
+                    style={{...styles.button, border: 'none', color: 'white'}}
                   >
                     <small>
                       {' '}
@@ -158,6 +419,7 @@ const UserDashboard = () => {
                     className={`nav-link nav-tab nav-closed nav-tab-item nav-margin ${
                       filter === 'closed' && 'active'
                     }`}
+                    style={{...styles.button, border: 'none', color: 'white'}}
                   >
                     <small>
                       <i class='fas fa-times-circle'></i> Closed (
@@ -172,10 +434,10 @@ const UserDashboard = () => {
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
               )}
               {activeProducts.length > 0 && (
-                <div className='card-body desktop-product-view'>
+                <div className='card-body desktop-product-view' style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
                   {pagination.map((p, i) => {
                     return (
-                      <div class='card rounded-0 mb-3 product-card' key={i}>
+                      <div class='card rounded-0 mb-3 product-card' key={i} style={{...styles.card, transition: 'transform 0.3s ease, box-shadow 0.3s ease'}} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
                         <div class='row g-0'>
                           <div class='col-md-3 product-img'>
                             <Link
@@ -208,8 +470,8 @@ const UserDashboard = () => {
                                   </h6>
                                 </Link>
                                 <span>
-                                  <h6 className='text-success'>
-                                    ₦{parseInt(p.price).format()}
+                                  <h6 style={styles.text}>
+                                    USDC{parseInt(p.price).format()}
                                   </h6>
                                 </span>
                               </div>
@@ -225,8 +487,8 @@ const UserDashboard = () => {
                                       to={`/category/${p.category._id}`}
                                       className='badge badge-pill text-muted me-2 text-decoration-none'
                                       style={{
-                                        backgroundColor: '#eef2f4',
-                                        color: '#303a4b',
+                                        backgroundColor: '#FFD700',
+                                        color: '#228B22',
                                         // fontSize: '14px',
                                       }}
                                     >
@@ -237,8 +499,8 @@ const UserDashboard = () => {
                                     <div
                                       className='badge badge-pill text-muted'
                                       style={{
-                                        backgroundColor: '#eef2f4',
-                                        color: '#303a4b',
+                                        backgroundColor: '#FFD700',
+                                        color: '#228B22',
                                       }}
                                     >
                                       {p.condition}
@@ -252,7 +514,8 @@ const UserDashboard = () => {
                                       <span className=''>
                                         <Link
                                           to={`/edit-product/${p._id}`}
-                                          class='btn btn-primary btn-sm text-white pt-0 pb-0 shadow-none'
+                                          class='btn btn-sm text-white pt-0 pb-0 shadow-none'
+                                          style={styles.button}
                                         >
                                           Edit
                                         </Link>
@@ -316,13 +579,15 @@ const UserDashboard = () => {
               )}
 
               {activeProducts.length > 0 && (
-                <div className='card-body mobile-product'>
+                <div className='card-body mobile-product' style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
                   {pagination.map((p, i) => {
                     if (p.status === 'active') {
                       return (
                         <div
                           className='card card-shadow rounded-0 mb-3 mobile-product-view d-flex flex-row'
-                          style={{ height: '12.43rem' }}
+                          style={{ height: '12.43rem', ...styles.card, transition: 'transform 0.3s ease, box-shadow 0.3s ease'}}
+                          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         >
                           <div className='product-img-mobile'>
                             <div className='product-img-mobile'>
@@ -360,8 +625,8 @@ const UserDashboard = () => {
                                 </h6>
                               </Link>
                               <span>
-                                <h6 className='text-success'>
-                                  ₦{parseInt(p.price).format()}
+                                <h6 style={styles.text}>
+                                  USDC{parseInt(p.price).format()}
                                 </h6>
                               </span>
                             </div>
@@ -377,8 +642,8 @@ const UserDashboard = () => {
                                     to={`/category/${p.category._id}`}
                                     className='badge badge-pill text-muted me-2 text-decoration-none'
                                     style={{
-                                      backgroundColor: '#eef2f4',
-                                      color: '#303a4b',
+                                      backgroundColor: '#FFD700',
+                                      color: '#228B22',
                                     }}
                                   >
                                     {p.category.name}
@@ -388,8 +653,8 @@ const UserDashboard = () => {
                                   <div
                                     className='badge badge-pill text-muted'
                                     style={{
-                                      backgroundColor: '#eef2f4',
-                                      color: '#303a4b',
+                                      backgroundColor: '#FFD700',
+                                      color: '#228B22',
                                     }}
                                   >
                                     {p.condition}
@@ -403,7 +668,8 @@ const UserDashboard = () => {
                                   <span className=''>
                                     <Link
                                       to={`/edit-product/${p._id}`}
-                                      class='btn btn-primary btn-sm text-white pt-0 pb-0 shadow-none'
+                                      class='btn btn-sm text-white pt-0 pb-0 shadow-none'
+                                      style={styles.button}
                                     >
                                       Edit
                                     </Link>
@@ -474,6 +740,39 @@ const UserDashboard = () => {
               )}
             </div>
           </div>
+
+          {/* Modal for marking as delivering */}
+          <Modal
+            title="Mark Order as Delivering"
+            visible={isModalVisible}
+            onOk={handleMarkDelivering}
+            onCancel={handleCancel}
+          >
+            <div className="mb-3">
+              <label>Tracking Number</label>
+              <Input
+                value={trackingNumber}
+                onChange={(e) => setTrackingNumber(e.target.value)}
+                placeholder="Enter tracking number"
+              />
+            </div>
+            <div className="mb-3">
+              <label>Delivery Provider</label>
+              <Input
+                value={deliveryProvider}
+                onChange={(e) => setDeliveryProvider(e.target.value)}
+                placeholder="Enter delivery provider"
+              />
+            </div>
+            <div className="mb-3">
+              <label>Estimated Delivery Date</label>
+              <DatePicker
+                value={estimatedDeliveryDate}
+                onChange={(date) => setEstimatedDeliveryDate(date)}
+                style={{ width: '100%' }}
+              />
+            </div>
+          </Modal>
         </div>
       </div>
     </>

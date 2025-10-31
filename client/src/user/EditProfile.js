@@ -12,13 +12,14 @@ const EditProfile = ({ match }) => {
     email: '',
     phone: '',
     location: '',
+    wallet: '',
     _id: '',
   });
   const [locations, setLocations] = useState([]);
   const [photo, setPhoto] = useState('');
 
   const { user, token } = isAuthenticated();
-  const { name, username, email, phone, location, _id } = values;
+  const { name, username, email, phone, location, wallet, _id } = values;
 
   const loadUser = async () => {
     let data = await getUser(match.params.userId);
@@ -31,6 +32,7 @@ const EditProfile = ({ match }) => {
       email: data.data.email,
       phone: data.data.phone,
       location: data.data.location,
+      wallet: data.data.wallet || '',
       _id: data.data._id,
     });
     setPhoto(data.data.photo);
@@ -75,6 +77,7 @@ const EditProfile = ({ match }) => {
     userData.append('email', email);
     userData.append('phone', phone);
     userData.append('location', location);
+    userData.append('wallet', wallet);
     userData.append('_id', user._id);
     photo && userData.append('photo', photo);
 
@@ -93,41 +96,73 @@ const EditProfile = ({ match }) => {
     }
   };
 
+  const styles = {
+    container: {
+      background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+      minHeight: '100vh',
+      padding: '20px',
+    },
+    card: {
+      backgroundColor: 'white',
+      border: '1px solid #FFD700',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s ease',
+    },
+    input: {
+      backgroundColor: 'white',
+      border: '1px solid #FFD700',
+      borderRadius: '0',
+      transition: 'all 0.3s ease',
+    },
+    button: {
+      background: 'linear-gradient(to right, #32CD32, #228B22)',
+      border: 'none',
+      color: 'white',
+      transition: 'all 0.3s ease',
+    },
+    text: {
+      color: '#228B22',
+    },
+  };
+
   const updateProfileForm = () => (
-    <div className='card rounded-0 pb-5 card-shadow'>
-      <div className='card-header p-4'>
-        <h2 className='text-center'>
+    <div className='card rounded-0 pb-5 card-shadow' style={styles.card}>
+      <div className='card-header p-4' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+        <h2 className='text-center' style={styles.text}>
           <i class='fas fa-user-edit'></i> Edit your profile
         </h2>
       </div>
       <div className='card-body'>
-        <form onSubmit={handleSubmit}>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>Your name</label>
+        <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+          <div className='form-group mb-4 col-md-8' style={{width: '100%', maxWidth: '500px'}}>
+            <label className='form-label' style={styles.text}>Your name</label>
             <input
               type='text'
-              className='form-control shadow-none rounded-0'
+              className='form-control shadow-none'
               placeholder='Enter name'
               value={name}
               onChange={handleChange('name')}
+              style={styles.input}
             />
           </div>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>Your username</label>
+          <div className='form-group mb-4 col-md-8' style={{width: '100%', maxWidth: '500px'}}>
+            <label className='form-label' style={styles.text}>Your username</label>
             <input
               type='text'
-              className='form-control shadow-none rounded-0'
+              className='form-control shadow-none'
               placeholder='Enter username'
               value={username}
               onChange={handleChange('username')}
+              style={styles.input}
             />
           </div>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
+          <div className='form-group mb-4 col-md-8' style={{width: '100%', maxWidth: '500px'}}>
             <select
-              class='form-select shadow-none rounded-0'
+              class='form-select shadow-none'
               aria-label='Default select example'
               onChange={handleChange('location')}
               value={location}
+              style={styles.input}
             >
               <option selected>Your Location</option>
               {locations.map((l, i) => {
@@ -136,12 +171,12 @@ const EditProfile = ({ match }) => {
             </select>
           </div>
 
-          <div className='mx-auto col-md-8'>
-            <h6>Upload Photo</h6>
+          <div className='col-md-8' style={{width: '100%', maxWidth: '500px'}}>
+            <h6 style={styles.text}>Upload Photo</h6>
             <div className='form-group mb-3 d-flex'>
               <label
                 className='btn btn-secondary p-0 me-3'
-                style={{ fontSize: '10px' }}
+                style={{ fontSize: '10px', ...styles.button }}
               >
                 <div>
                   <i class='fas fa-plus fa-2x p-4'></i>
@@ -164,34 +199,48 @@ const EditProfile = ({ match }) => {
               )}
             </div>
           </div>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>Email address</label>
+          <div className='form-group mb-4 col-md-8' style={{width: '100%', maxWidth: '500px'}}>
+            <label className='form-label' style={styles.text}>Email address</label>
             <input
               type='email'
-              className='form-control shadow-none rounded-0'
+              className='form-control shadow-none'
               placeholder='Enter email'
               value={email}
               onChange={handleChange('email')}
+              style={styles.input}
             />
           </div>
-          <div className='form-group mb-4 col-md-8 mx-auto'>
-            <label className='form-label'>Phone number</label>
+          <div className='form-group mb-4 col-md-8' style={{width: '100%', maxWidth: '500px'}}>
+            <label className='form-label' style={styles.text}>Phone number</label>
             <input
               type='tel'
-              className='form-control shadow-none rounded-0'
+              className='form-control shadow-none'
               placeholder='Enter phone number'
               value={phone}
               onChange={handleChange('phone')}
+              style={styles.input}
+            />
+          </div>
+          <div className='form-group mb-4 col-md-8' style={{width: '100%', maxWidth: '500px'}}>
+            <label className='form-label' style={styles.text}>Wallet Address</label>
+            <input
+              type='text'
+              className='form-control shadow-none'
+              placeholder='Enter wallet address'
+              value={wallet}
+              onChange={handleChange('wallet')}
+              style={styles.input}
             />
           </div>
 
-          <div className='mx-auto col-md-8'>
+          <div className='col-md-8' style={{width: '100%', maxWidth: '500px'}}>
             <Button
               type='primary'
               size='large'
               shape='round'
               className='rounded-0'
               htmlType='submit'
+              style={styles.button}
             >
               Edit Profile
             </Button>
@@ -238,7 +287,7 @@ const EditProfile = ({ match }) => {
 
   return (
     <>
-      <div className='container-fluid profile-settings-container mt-5'>
+      <div className='container-fluid profile-settings-container mt-5' style={styles.container}>
         <div className='row'>
           {_id !== user._id && (
             <Result

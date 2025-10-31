@@ -1,0 +1,73 @@
+/* Hierarchical Filter Animations */
+.hierarchical-filter {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hierarchical-filter .ant-cascader {
+  transition: all 0.3s ease;
+}
+
+.hierarchical-filter .ant-cascader-menu {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hierarchical-filter .ant-cascader-menu-item {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.hierarchical-filter .ant-cascader-menu-item:hover {
+  animation: highlight 0.2s ease;
+}
+
+@keyframes highlight {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: #f0f8ff;
+  }
+  100% {
+    background-color: #f5f5f5;
+  }
+}
+
+.hierarchical-filter .ant-cascader-picker-clear {
+  transition: opacity 0.2s ease;
+}
+
+.hierarchical-filter .ant-cascader-picker-clear:hover {
+  opacity: 0.8;
+}
+
+/* Responsive animations */
+@media (max-width: 768px) {
+  .hierarchical-filter {
+    animation: fadeInUp 0.4s ease-out;
+  }
+
+  .hierarchical-filter .ant-cascader-menu {
+    animation: slideDown 0.25s ease-out;
+  }
+}
