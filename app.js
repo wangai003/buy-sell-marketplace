@@ -98,7 +98,13 @@ mongoose
   .catch((err) => console.log(err));
 
 //middlewares
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? 'https://buy-sell-marketplace-qigz-q0ccor0ss-wangai-moses-projects.vercel.app'
+    : 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

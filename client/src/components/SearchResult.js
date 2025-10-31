@@ -28,63 +28,82 @@ const SearchResult = () => {
   const history = useHistory();
 
   const loadSearchResults = async (page) => {
-    const { location, category, subcategory, element, name } = queryString.parse(
-      window.location.search
-    );
-    setCategory(category);
-    setSubcategory(subcategory);
-    setElement(element);
-    setLocation(location);
-    setName(name);
-    const res = await searchResults({
-      location,
-      category,
-      subcategory,
-      element,
-      name,
-    });
-    setCurrent(page);
-    const to = page * countPerPage;
-    const from = to - countPerPage;
-    setPagination(res.data.slice(from, to));
-    setSearchResult(res.data);
+    try {
+      const { location, category, subcategory, element, name } = queryString.parse(
+        window.location.search
+      );
+      setCategory(category);
+      setSubcategory(subcategory);
+      setElement(element);
+      setLocation(location);
+      setName(name);
+      const res = await searchResults({
+        location,
+        category,
+        subcategory,
+        element,
+        name,
+      });
+      setCurrent(page);
+      const to = page * countPerPage;
+      const from = to - countPerPage;
+      const data = Array.isArray(res.data) ? res.data : [];
+      setPagination(data.slice(from, to));
+      setSearchResult(data);
+    } catch (error) {
+      console.error('Error loading search results:', error);
+      setPagination([]);
+      setSearchResult([]);
+    }
   };
 
   const loadCategories = async () => {
-    const { category, subcategory, element } = queryString.parse(window.location.search);
-    const res = await getCategoryHierarchy();
+    try {
+      const { category, subcategory, element } = queryString.parse(window.location.search);
+      const res = await getCategoryHierarchy();
 
-    // Find and set category name
-    res.data.forEach((cat) => {
-      if (cat._id === category) {
-        setCategoryName(cat.name);
-      }
-      // Find subcategory name
-      if (cat.subcategories) {
-        cat.subcategories.forEach((sub) => {
-          if (sub._id === subcategory) {
-            setSubcategoryName(sub.name);
+      // Find and set category name
+      if (res.data && Array.isArray(res.data)) {
+        res.data.forEach((cat) => {
+          if (cat._id === category) {
+            setCategoryName(cat.name);
           }
-          // Find element name
-          if (sub.elements) {
-            sub.elements.forEach((elem) => {
-              if (elem._id === element) {
-                setElementName(elem.name);
+          // Find subcategory name
+          if (cat.subcategories) {
+            cat.subcategories.forEach((sub) => {
+              if (sub._id === subcategory) {
+                setSubcategoryName(sub.name);
+              }
+              // Find element name
+              if (sub.elements) {
+                sub.elements.forEach((elem) => {
+                  if (elem._id === element) {
+                    setElementName(elem.name);
+                  }
+                });
               }
             });
           }
         });
       }
-    });
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
   };
   const loadLocations = async () => {
-    const { location } = queryString.parse(window.location.search);
-    const res = await allLocations();
-    res.data.filter((loc) => {
-      if (loc._id === location) {
-        setLocationName(loc.name);
+    try {
+      const { location } = queryString.parse(window.location.search);
+      const res = await allLocations();
+      if (res.data && Array.isArray(res.data)) {
+        res.data.filter((loc) => {
+          if (loc._id === location) {
+            setLocationName(loc.name);
+          }
+        });
       }
-    });
+    } catch (error) {
+      console.error('Error loading locations:', error);
+    }
   };
 
   const handleSearch = (e) => {

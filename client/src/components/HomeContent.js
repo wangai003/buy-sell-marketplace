@@ -21,8 +21,13 @@ const HomeContent = ({ categories }) => {
   }, [favourite]);
 
   const loadProducts = async () => {
-    const res = await allProducts();
-    setProducts(res.data);
+    try {
+      const res = await allProducts();
+      setProducts(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      setProducts([]); // Set empty array on error
+    }
   };
 
   const handleAddFavourite = async (productId) => {

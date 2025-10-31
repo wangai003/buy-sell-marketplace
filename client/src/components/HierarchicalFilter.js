@@ -18,10 +18,11 @@ const HierarchicalFilter = () => {
   const loadCategories = async () => {
     try {
       const res = await getCategoryHierarchy();
-      const transformedOptions = transformCategoriesToOptions(res.data);
+      const transformedOptions = transformCategoriesToOptions(res.data || []);
       setOptions(transformedOptions);
     } catch (error) {
       console.error('Error loading categories:', error);
+      setOptions([]); // Set empty array on error
     }
   };
 
