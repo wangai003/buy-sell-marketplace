@@ -59,8 +59,9 @@ exports.addProduct = async (req, res) => {
       for (let i = 0; i < images.length; i++) {
         const imageUrl = await cloudinary.uploader.upload(images[i], {
           folder: 'buynsell',
+          secure: true, // Force HTTPS URLs
         });
-        files.push(imageUrl.url);
+        files.push(imageUrl.secure_url); // Use secure_url instead of url
         file_ids.push(imageUrl.public_id);
       }
 
@@ -220,8 +221,9 @@ exports.updateProduct = async (req, res) => {
         if (images[i].substring(11, 21) !== 'cloudinary') {
           const imageUrl = await cloudinary.uploader.upload(images[i], {
             folder: 'buynsell',
+            secure: true, // Force HTTPS URLs
           });
-          files.push(imageUrl.url);
+          files.push(imageUrl.secure_url); // Use secure_url instead of url
           file_ids.push(imageUrl.public_id);
         }
       }

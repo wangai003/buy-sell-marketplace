@@ -64,6 +64,7 @@ exports.updateProfile = async (req, res) => {
             overwrite: true,
             invalidate: true,
             folder: 'buynsell/profileimages/',
+            secure: true, // Force HTTPS URLs
           });
 
     let updatedUser = {
@@ -74,7 +75,7 @@ exports.updateProfile = async (req, res) => {
       photo:
         !photo || photo.substring(11, 21) === 'cloudinary'
           ? undefined
-          : imageUrl.url,
+          : imageUrl.secure_url,
       location: location,
       photo_id:
         !photo || photo.substring(11, 21) === 'cloudinary'

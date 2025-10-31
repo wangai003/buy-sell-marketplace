@@ -37,7 +37,8 @@ exports.createAdvertisement = async (req, res) => {
         folder: 'advertisements',
         width: 1200,
         height: 400,
-        crop: 'fill'
+        crop: 'fill',
+        secure: true // Force HTTPS URLs
       });
       image = result.secure_url;
     }
@@ -76,7 +77,8 @@ exports.updateAdvertisement = async (req, res) => {
         folder: 'advertisements',
         width: 1200,
         height: 400,
-        crop: 'fill'
+        crop: 'fill',
+        secure: true // Force HTTPS URLs
       });
       updateData.image = result.secure_url;
     }
