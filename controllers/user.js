@@ -16,6 +16,22 @@ exports.userProfile = async (req, res) => {
       { path: 'products', populate: { path: 'location' } },
     ])
     .exec();
+
+  // Convert any HTTP image URLs to HTTPS
+  if (user.photo) {
+    user.photo = user.photo.replace(/^http:\/\//i, 'https://');
+  }
+  if (user.products && Array.isArray(user.products)) {
+    user.products = user.products.map(product => {
+      if (product.images && Array.isArray(product.images)) {
+        product.images = product.images.map(url =>
+          url ? url.replace(/^http:\/\//i, 'https://') : url
+        );
+      }
+      return product;
+    });
+  }
+
   user.password = undefined;
   return res.json(user);
 };

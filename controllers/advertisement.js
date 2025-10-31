@@ -6,7 +6,16 @@ exports.getActiveAdvertisements = async (req, res) => {
   try {
     const advertisements = await Advertisement.find({ isActive: true })
       .sort({ order: 1, createdAt: -1 });
-    res.json(advertisements);
+
+    // Convert any HTTP image URLs to HTTPS
+    const sanitizedAds = advertisements.map(ad => {
+      if (ad.image) {
+        ad.image = ad.image.replace(/^http:\/\//i, 'https://');
+      }
+      return ad;
+    });
+
+    res.json(sanitizedAds);
   } catch (error) {
     console.error('Error fetching advertisements:', error);
     res.status(500).json({ error: 'Server error' });

@@ -107,7 +107,18 @@ exports.addProduct = async (req, res) => {
 exports.allProducts = async (req, res) => {
   try {
     const products = await Product.find().populate('author category subcategory element location');
-    return res.json(products);
+
+    // Convert any HTTP image URLs to HTTPS
+    const sanitizedProducts = products.map(product => {
+      if (product.images && Array.isArray(product.images)) {
+        product.images = product.images.map(url =>
+          url ? url.replace(/^http:\/\//i, 'https://') : url
+        );
+      }
+      return product;
+    });
+
+    return res.json(sanitizedProducts);
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: 'Database connection failed', details: err.message });
@@ -119,6 +130,14 @@ exports.singleProduct = async (req, res) => {
     const product = await Product.findById(req.params.productId).populate(
       'category subcategory element location author reports'
     );
+
+    // Convert any HTTP image URLs to HTTPS
+    if (product && product.images && Array.isArray(product.images)) {
+      product.images = product.images.map(url =>
+        url ? url.replace(/^http:\/\//i, 'https://') : url
+      );
+    }
+
     return res.json(product);
   } catch (err) {
     console.log(err);
@@ -132,10 +151,21 @@ exports.singleProduct = async (req, res) => {
 
 exports.relatedProducts = async (req, res) => {
   try {
-    const product = await Product.find({
+    const products = await Product.find({
       category: req.params.categoryId,
     }).populate('category subcategory element location author reports');
-    return res.json(product);
+
+    // Convert any HTTP image URLs to HTTPS
+    const sanitizedProducts = products.map(product => {
+      if (product.images && Array.isArray(product.images)) {
+        product.images = product.images.map(url =>
+          url ? url.replace(/^http:\/\//i, 'https://') : url
+        );
+      }
+      return product;
+    });
+
+    return res.json(sanitizedProducts);
   } catch (err) {
     console.log(err);
     if (err.response && err.response.status === 400) {
@@ -367,7 +397,18 @@ exports.getByCategory = async (req, res) => {
     const products = await Product.find({
       category: req.params.categoryId,
     }).populate('author category subcategory element location');
-    return res.json(products);
+
+    // Convert any HTTP image URLs to HTTPS
+    const sanitizedProducts = products.map(product => {
+      if (product.images && Array.isArray(product.images)) {
+        product.images = product.images.map(url =>
+          url ? url.replace(/^http:\/\//i, 'https://') : url
+        );
+      }
+      return product;
+    });
+
+    return res.json(sanitizedProducts);
   } catch (err) {
     console.log('GET CATEGORY FAILED', err);
     return res.status(400).send('Error. Try again');
@@ -395,7 +436,18 @@ exports.getByFilter = async (req, res) => {
       .sort({ createdAt: req.body.sortBy })
       .populate('author category subcategory element location')
       .exec();
-    res.json(products);
+
+    // Convert any HTTP image URLs to HTTPS
+    const sanitizedProducts = products.map(product => {
+      if (product.images && Array.isArray(product.images)) {
+        product.images = product.images.map(url =>
+          url ? url.replace(/^http:\/\//i, 'https://') : url
+        );
+      }
+      return product;
+    });
+
+    res.json(sanitizedProducts);
   } catch (err) {
     console.log('GET BY FILTER FAILED', err);
     return res.status(400).send('Error. Try again');
@@ -463,10 +515,21 @@ exports.searchResults = async (req, res) => {
     }
   }
 
-  let result = await Product.find(query)
+  let results = await Product.find(query)
     .sort({ createdAt: '-1' })
     .populate('author category subcategory element location');
-  res.json(result);
+
+  // Convert any HTTP image URLs to HTTPS
+  const sanitizedResults = results.map(product => {
+    if (product.images && Array.isArray(product.images)) {
+      product.images = product.images.map(url =>
+        url ? url.replace(/^http:\/\//i, 'https://') : url
+      );
+    }
+    return product;
+  });
+
+  res.json(sanitizedResults);
 };
 
 exports.reportProduct = async (req, res) => {
