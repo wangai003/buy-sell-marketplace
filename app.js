@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const https = require('https');
 const http = require('http');
+const cron = require('node-cron');
 require('dotenv').config();
 const {
   addUser,
@@ -113,6 +114,32 @@ app.use(bodyParser.urlencoded({ extended: true }));
 fs.readdirSync('./routes').map((routes) =>
   app.use('/api', require(`./routes/${routes}`))
 );
+
+// Automatic auction processing - runs every minute
+const { processEndedAuctions } = require('./controllers/product');
+cron.schedule('* * * * *', async () => {
+  try {
+    console.log('Running automatic auction processing...');
+    const req = { body: {} };
+    const res = {
+      json: (data) => {
+        if (data.results && data.results.length > 0) {
+          console.log(`Auction processing completed: ${data.message}`);
+        }
+      },
+      status: (code) => ({
+        send: (msg) => {
+          if (code !== 200) {
+            console.error(`Auction processing error (${code}):`, msg);
+          }
+        }
+      })
+    };
+    await processEndedAuctions(req, res);
+  } catch (error) {
+    console.error('Error in automatic auction processing:', error);
+  }
+});
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, './client/build')));

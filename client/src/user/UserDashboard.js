@@ -8,12 +8,14 @@ import { closeProduct } from '../actions/product';
 import { getBuyerOrders, getSellerOrders, updateOrderStatus } from '../actions/order';
 import { Card, Empty, Pagination, message, Popconfirm, Button, Table, Tag, Modal, Input, DatePicker } from 'antd';
 import io from 'socket.io-client';
+import { useSelector } from 'react-redux';
 
 const { Meta } = Card;
 
 const UserDashboard = () => {
   const { user, token } = isAuthenticated();
   const countPerPage = 5;
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [values, setValues] = useState({
     _id: '',
     followers: '',
@@ -65,6 +67,13 @@ const UserDashboard = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [deliveryProvider, setDeliveryProvider] = useState('');
   const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState(null);
+  
+  // Payment state
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [paymentOrder, setPaymentOrder] = useState(null);
+  const [paymentDetails, setPaymentDetails] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const { selectedCurrency } = useSelector((state) => state.buynsellCurrency || { selectedCurrency: 'XLM' });
 
   const { _id, products, followers, following, favourites, wallet, sellerCategories } = values;
 
@@ -115,6 +124,19 @@ const UserDashboard = () => {
   };
 
   useEffect(() => {
+    // Check screen size
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      // Consider screens smaller than 768px (tablet breakpoint) as small screens
+      setIsSmallScreen(width < 768);
+    };
+
+    // Check on mount
+    checkScreenSize();
+
+    // Check on resize
+    window.addEventListener('resize', checkScreenSize);
+
     loadUser();
     loadUserProducts(1);
     loadOrders();
@@ -126,6 +148,7 @@ const UserDashboard = () => {
     });
 
     return () => {
+      window.removeEventListener('resize', checkScreenSize);
       socket.disconnect();
     };
   }, [filter, closed]);
@@ -150,6 +173,88 @@ const UserDashboard = () => {
       console.log(err);
       message.error('Failed to confirm order', 4);
     }
+  };
+
+  const handlePayOrder = async (order) => {
+    // ✅ SECURITY CHECK 1: Frontend validation
+    if (order.buyerId !== user._id) {
+      message.error('You can only pay for your own orders');
+      return;
+    }
+
+    // ✅ SECURITY CHECK 2: Order status validation
+    if (order.status !== 'AWAITING_PAYMENT') {
+      message.error('This order cannot be paid');
+      return;
+    }
+
+    // ✅ SECURITY CHECK 3: Auction order validation
+    if (order.orderType === 'auction' && order.buyerId !== user._id) {
+      message.error('Only the auction winner can pay for this order');
+      return;
+    }
+
+    try {
+      setPaymentOrder(order);
+      setPaymentModalVisible(true);
+      setPaymentStatus('loading');
+
+      const res = await fetch(`${process.env.REACT_APP_API}/payment/stellar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: order.productId?._id || order.productId,
+          buyerId: user._id,
+          sellerId: order.sellerId?._id || order.sellerId,
+          quantity: order.quantity || 1,
+          currency: selectedCurrency
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (res.ok) {
+        setPaymentDetails(data);
+        setPaymentStatus('ready');
+        // Start polling for payment status
+        pollPaymentStatus(data.orderId);
+      } else {
+        message.error(data.error || 'Failed to initiate payment');
+        setPaymentStatus('error');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      message.error('Failed to initiate payment');
+      setPaymentStatus('error');
+    }
+  };
+
+  const pollPaymentStatus = (orderId) => {
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch(`${process.env.REACT_APP_API}/orders/${orderId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (data.status === 'PAID' || data.order?.status === 'PAID') {
+          setPaymentStatus('paid');
+          message.success('Payment confirmed!');
+          clearInterval(poll);
+          setPaymentModalVisible(false);
+          loadOrders(); // Reload orders
+        }
+      } catch (error) {
+        console.error('Error polling payment status:', error);
+      }
+    }, 5000);
+
+    // Stop polling after 5 minutes
+    setTimeout(() => clearInterval(poll), 300000);
   };
 
   const handleMarkDelivering = async () => {
@@ -195,6 +300,119 @@ const UserDashboard = () => {
     var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
     return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
   };
+
+  // Show message for sellers on small screens
+  if (user && user.canSell && isSmallScreen) {
+    return (
+      <div
+        className="container-fluid"
+        style={{
+          minHeight: '100vh',
+          background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }}
+      >
+        <div
+          className="card card-shadow"
+          style={{
+            maxWidth: '500px',
+            width: '100%',
+            borderRadius: '15px',
+            background: 'rgba(255,255,255,0.95)',
+            boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+          }}
+        >
+          <div
+            className="card-body text-center p-5"
+            style={{
+              background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+              borderRadius: '15px',
+            }}
+          >
+            <div style={{ marginBottom: '30px' }}>
+              <i
+                className="fas fa-laptop fa-4x"
+                style={{ color: '#228B22', marginBottom: '20px' }}
+              ></i>
+            </div>
+            <h2 style={{ color: '#228B22', marginBottom: '20px', fontWeight: 'bold' }}>
+              <i className="fas fa-store me-2"></i>
+              Seller Dashboard
+            </h2>
+            <p
+              style={{
+                fontSize: '18px',
+                color: '#333',
+                marginBottom: '30px',
+                lineHeight: '1.6',
+              }}
+            >
+              The Seller Dashboard is optimized for larger screens to provide the best
+              experience.
+            </p>
+            <div
+              style={{
+                background: '#f8f9fa',
+                borderRadius: '10px',
+                padding: '20px',
+                marginBottom: '30px',
+              }}
+            >
+              <h5 style={{ color: '#228B22', marginBottom: '15px' }}>
+                <i className="fas fa-info-circle me-2"></i>
+                Please use a larger device:
+              </h5>
+              <ul
+                style={{
+                  textAlign: 'left',
+                  color: '#666',
+                  fontSize: '16px',
+                  listStyle: 'none',
+                  padding: 0,
+                }}
+              >
+                <li style={{ marginBottom: '10px' }}>
+                  <i className="fas fa-check-circle me-2" style={{ color: '#228B22' }}></i>
+                  Laptop or Desktop Computer
+                </li>
+                <li style={{ marginBottom: '10px' }}>
+                  <i className="fas fa-check-circle me-2" style={{ color: '#228B22' }}></i>
+                  Tablet (iPad, Android Tablet)
+                </li>
+                <li style={{ marginBottom: '10px' }}>
+                  <i className="fas fa-times-circle me-2" style={{ color: '#dc3545' }}></i>
+                  Mobile Phone (Not Supported)
+                </li>
+              </ul>
+            </div>
+            <p style={{ fontSize: '14px', color: '#999', fontStyle: 'italic' }}>
+              Minimum screen width: 768px
+            </p>
+            <div style={{ marginTop: '30px' }}>
+              <Link
+                to="/"
+                className="btn"
+                style={{
+                  background: 'linear-gradient(to right, #33b27b, #28a745)',
+                  border: 'none',
+                  color: 'white',
+                  borderRadius: '20px',
+                  padding: '10px 30px',
+                  fontSize: '16px',
+                }}
+              >
+                <i className="fas fa-home me-2"></i>
+                Go to Home
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -438,6 +656,16 @@ const UserDashboard = () => {
                       key: 'actions',
                       render: (_, record) => (
                         <div>
+                          {record.status === 'AWAITING_PAYMENT' && (
+                            <Button
+                              type="primary"
+                              size="small"
+                              onClick={() => handlePayOrder(record)}
+                              style={styles.button}
+                            >
+                              {record.orderType === 'auction' ? 'Pay Now (Auction)' : 'Pay Now'}
+                            </Button>
+                          )}
                           {record.status === 'DELIVERING' && (
                             <Button
                               type="primary"
@@ -944,6 +1172,93 @@ const UserDashboard = () => {
                 style={{ width: '100%' }}
               />
             </div>
+          </Modal>
+
+          {/* Payment Modal */}
+          <Modal
+            title={paymentOrder?.orderType === 'auction' ? 'Pay for Auction Order' : 'Complete Payment'}
+            open={paymentModalVisible}
+            onCancel={() => {
+              setPaymentModalVisible(false);
+              setPaymentOrder(null);
+              setPaymentDetails(null);
+              setPaymentStatus(null);
+            }}
+            footer={null}
+            width={720}
+          >
+            {paymentStatus === 'loading' && (
+              <div className="text-center p-5">
+                <i className="fas fa-spinner fa-spin fa-3x" style={{ color: '#FFD700' }}></i>
+                <p style={{ marginTop: '15px', color: '#666' }}>Preparing payment...</p>
+              </div>
+            )}
+
+            {paymentStatus === 'error' && (
+              <div className="text-center p-5">
+                <i className="fas fa-exclamation-circle fa-3x" style={{ color: '#dc3545' }}></i>
+                <p style={{ marginTop: '15px', color: '#666' }}>Failed to initiate payment. Please try again.</p>
+              </div>
+            )}
+
+            {paymentStatus === 'ready' && paymentDetails && (
+              <div>
+                {paymentOrder?.orderType === 'auction' && (
+                  <div className="alert alert-info mb-3">
+                    <i className="fas fa-trophy me-2"></i>
+                    <strong>Congratulations!</strong> You won this auction. Please complete payment to receive your item.
+                  </div>
+                )}
+                <div className="mb-3">
+                  <strong>Order ID:</strong> {paymentDetails.orderId || paymentOrder?._id}
+                </div>
+                <div className="mb-3">
+                  <strong>Amount:</strong> {paymentDetails.amount || paymentOrder?.displayPrice} {paymentDetails.currency || paymentOrder?.displayCurrency || 'XLM'}
+                </div>
+                {paymentDetails.address && (
+                  <div className="mb-3">
+                    <div className="mb-2"><strong>Send {paymentDetails.amount || paymentOrder?.displayPrice} {paymentDetails.currency || paymentOrder?.displayCurrency || 'XLM'} to:</strong></div>
+                    <div style={{ wordBreak: 'break-all', background: '#f5f5f5', padding: '10px', borderRadius: '5px', marginBottom: '10px' }}>
+                      {paymentDetails.address}
+                    </div>
+                    <div className="d-flex gap-2">
+                      <Button size="small" onClick={() => navigator.clipboard.writeText(paymentDetails.address)}>
+                        Copy Address
+                      </Button>
+                      <Button size="small" onClick={() => navigator.clipboard.writeText(paymentDetails.amount || paymentOrder?.displayPrice)}>
+                        Copy Amount
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {paymentDetails.memo && (
+                  <div className="mb-3">
+                    <div className="mb-2"><strong>Memo:</strong></div>
+                    <div style={{ wordBreak: 'break-all', background: '#f5f5f5', padding: '10px', borderRadius: '5px' }}>
+                      {paymentDetails.memo}
+                    </div>
+                  </div>
+                )}
+                {paymentDetails.sep7 && (
+                  <div className="mb-3">
+                    <a href={paymentDetails.sep7} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                      <i className="fas fa-wallet me-2"></i>
+                      Open in Stellar Wallet
+                    </a>
+                  </div>
+                )}
+                <div className="mt-3 text-muted" style={{ fontSize: '12px' }}>
+                  After sending, the payment status will update automatically. This may take a few minutes.
+                </div>
+              </div>
+            )}
+
+            {paymentStatus === 'paid' && (
+              <div className="text-center p-5">
+                <i className="fas fa-check-circle fa-3x" style={{ color: '#28a745' }}></i>
+                <p style={{ marginTop: '15px', color: '#666' }}>Payment confirmed! Your order is being processed.</p>
+              </div>
+            )}
           </Modal>
         </div>
       </div>

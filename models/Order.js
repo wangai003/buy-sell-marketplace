@@ -107,6 +107,17 @@ const orderSchema = new mongoose.Schema({
   paylink: {
     type: String,
   },
+  orderType: {
+    type: String,
+    enum: ['regular', 'auction'],
+    default: 'regular',
+  },
+  payAsset: {
+    type: String,
+  },
+  payAddress: {
+    type: String,
+  },
 });
 
 module.exports = mongoose.model('Order', orderSchema);

@@ -252,23 +252,91 @@ exports.getCategoriesByLevel = async (req, res) => {
 
 exports.getCategoryHierarchy = async (req, res) => {
   try {
-    const categories = await Category.find({ level: 1 }).sort({ createdAt: 1 }).exec();
+    // Optimized: Fetch all categories in a single query instead of N+1 queries
+    // This reduces from potentially 100+ queries to just 1 query
+    const allCategories = await Category.find({})
+      .sort({ level: 1, createdAt: 1 })
+      .lean()
+      .exec();
+
+    // Build hierarchy in memory using Maps for O(1) lookups (much faster)
+    const categoriesMap = new Map(); // level 1 categories
+    const subcategoriesMap = new Map(); // level 2 subcategories
     const hierarchy = [];
 
-    for (const category of categories) {
-      const subcategories = await Category.find({ parent: category._id, level: 2 }).sort({ createdAt: 1 }).exec();
-      const categoryWithSubs = { ...category.toObject(), subcategories: [] };
-
-      for (const subcategory of subcategories) {
-        const elements = await Category.find({ parent: subcategory._id, level: 3 }).sort({ createdAt: 1 }).exec();
-        categoryWithSubs.subcategories.push({ ...subcategory.toObject(), elements });
+    // First pass: Organize all categories by level and create structure
+    allCategories.forEach(cat => {
+      if (cat.level === 1) {
+        // Top-level categories
+        const categoryObj = {
+          ...cat,
+          subcategories: []
+        };
+        categoriesMap.set(cat._id.toString(), categoryObj);
+        hierarchy.push(categoryObj);
+      } else if (cat.level === 2) {
+        // Subcategories
+        const subcategoryObj = {
+          ...cat,
+          elements: []
+        };
+        subcategoriesMap.set(cat._id.toString(), subcategoryObj);
       }
+      // Elements (level 3) will be handled in third pass
+    });
 
-      hierarchy.push(categoryWithSubs);
-    }
+    // Second pass: Attach subcategories to their parent categories
+    allCategories.forEach(cat => {
+      if (cat.level === 2 && cat.parent) {
+        // Handle both ObjectId and string formats
+        const parentId = cat.parent.toString ? cat.parent.toString() : String(cat.parent);
+        const category = categoriesMap.get(parentId);
+        if (category) {
+          const subcategory = subcategoriesMap.get(cat._id.toString());
+          if (subcategory) {
+            category.subcategories.push(subcategory);
+          }
+        }
+      }
+    });
+
+    // Third pass: Attach elements to their parent subcategories
+    allCategories.forEach(cat => {
+      if (cat.level === 3 && cat.parent) {
+        // Handle both ObjectId and string formats
+        const parentId = cat.parent.toString ? cat.parent.toString() : String(cat.parent);
+        const subcategory = subcategoriesMap.get(parentId);
+        if (subcategory && subcategory.elements) {
+          subcategory.elements.push(cat);
+        }
+      }
+    });
+
+    // Sort subcategories and elements within each category (maintain original order)
+    hierarchy.forEach(category => {
+      if (category.subcategories && category.subcategories.length > 0) {
+        category.subcategories.sort((a, b) => {
+          if (a.createdAt && b.createdAt) {
+            return new Date(a.createdAt) - new Date(b.createdAt);
+          }
+          return 0;
+        });
+        category.subcategories.forEach(subcategory => {
+          if (subcategory.elements && subcategory.elements.length > 0) {
+            subcategory.elements.sort((a, b) => {
+              if (a.createdAt && b.createdAt) {
+                return new Date(a.createdAt) - new Date(b.createdAt);
+              }
+              return 0;
+            });
+          }
+        });
+      }
+    });
 
     return res.json(hierarchy);
   } catch (err) {
+    console.error('GET CATEGORY HIERARCHY FAILED', err);
     return res.status(400).send('Something went wrong.');
   }
 };

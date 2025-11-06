@@ -105,7 +105,7 @@ const NavMenu = () => {
         <ul className='navbar-nav align-items-center ms-auto'>
           {user && token && (
             <li className='nav-item ml-5 px-2'>
-              <Link className='nav-link' to='/for-you' style={{ color: '#fff', fontWeight: '500' }}>
+              <Link className='nav-link' to='/for-you' style={{ color: '#333', fontWeight: '500' }}>
                 <i className='fas fa-heart me-1'></i>For You
               </Link>
             </li>
@@ -152,17 +152,18 @@ const NavMenu = () => {
                   </Avatar>
                 </Badge>
                 <ul className='dropdown-menu' aria-labelledby='navbarDropdown'>
-                  <Link className='nav-link' to='/user/dashboard'>
+                  <Link className='nav-link' to='/user/dashboard' style={{ color: '#333' }}>
                     Dashboard
                   </Link>
                   {user.role === 'admin' && (
-                    <Link className='nav-link' to='/admin/dashboard'>
+                    <Link className='nav-link' to='/admin/dashboard' style={{ color: '#333' }}>
                       Admin
                     </Link>
                   )}
                   <Link
                     className='nav-link d-flex align-items-center'
                     to='/user/notifications'
+                    style={{ color: '#333' }}
                   >
                     <div>Notifications </div>
                     {notifications.length - notificationCount > 0 && (
@@ -176,7 +177,7 @@ const NavMenu = () => {
                       </div>
                     )}
                   </Link>
-                  <Link className='nav-link' to='/messages'>
+                  <Link className='nav-link' to='/messages' style={{ color: '#333' }}>
                     <div className='d-flex align-items-center'>
                       <div className='pe-1'>Messages</div>
                       <div>
@@ -195,7 +196,7 @@ const NavMenu = () => {
                       </div>
                     </div>
                   </Link>
-                  <span className='nav-link' role='button' onClick={logout}>
+                  <span className='nav-link' role='button' onClick={logout} style={{ color: '#333', cursor: 'pointer' }}>
                     Logout
                   </span>
                 </ul>
@@ -205,12 +206,12 @@ const NavMenu = () => {
           {!user && !token && (
             <>
               <li className='nav-item ml-5 px-2'>
-                <Link className='nav-link' to='/login'>
+                <Link className='nav-link' to='/login' style={{ color: '#333', fontWeight: '500' }}>
                   Login
                 </Link>
               </li>
               <li className='nav-item ml-5 px-2'>
-                <Link className='nav-link' to='/register'>
+                <Link className='nav-link' to='/register' style={{ color: '#333', fontWeight: '500' }}>
                   Register
                 </Link>
               </li>

@@ -99,6 +99,12 @@ exports.createPayment = async (req, res) => {
 exports.createStellarPayment = async (req, res) => {
   try {
     const { productId, buyerId, sellerId, quantity = 1, currency } = req.body;
+    
+    // ✅ SECURITY CHECK 1: Validate authenticated user
+    if (req.user && req.user._id.toString() !== buyerId) {
+      return res.status(403).json({ error: 'Unauthorized: You can only create payments for yourself' });
+    }
+
     const product = await Product.findById(productId);
     const buyer = await User.findById(buyerId);
     const seller = await User.findById(sellerId);
@@ -114,6 +120,69 @@ exports.createStellarPayment = async (req, res) => {
       return res.status(400).json({ error: 'Quantity must be a positive integer' });
     }
 
+    // ✅ SECURITY CHECK 2: If auction product, validate order exists and user is winner
+    if (product.isAuction) {
+      const auctionOrder = await Order.findOne({
+        productId: product._id,
+        buyerId: buyerId,
+        status: 'AWAITING_PAYMENT',
+        orderType: 'auction'
+      });
+
+      if (!auctionOrder) {
+        return res.status(403).json({ 
+          error: 'Unauthorized: Only the auction winner can pay for this item. No order found for this auction.' 
+        });
+      }
+
+      // ✅ SECURITY CHECK 3: Validate order belongs to authenticated user
+      if (req.user && auctionOrder.buyerId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ 
+          error: 'Unauthorized: You are not the winner of this auction' 
+        });
+      }
+
+      // ✅ SECURITY CHECK 4: Validate order status
+      if (auctionOrder.status !== 'AWAITING_PAYMENT') {
+        return res.status(400).json({ 
+          error: `This order cannot be paid. Current status: ${auctionOrder.status}` 
+        });
+      }
+
+      // Use existing order instead of creating new one
+      const sellerWallet = seller.wallet || 'GAHK7EEG2WWHVKDNT4CEQFZGKF2LGDSW2IVM4S5DP42RBW3K6BTODB4A';
+      const selectedCurrency = currency || auctionOrder.displayCurrency || 'XLM';
+      
+      // Update order with payment details
+      auctionOrder.payAsset = selectedCurrency === 'USDC' ? 'USDC' : 'XLM';
+      auctionOrder.payAddress = sellerWallet;
+      await auctionOrder.save();
+
+      // Determine asset based on currency
+      let assetParam = '';
+      if (selectedCurrency === 'USDC') {
+        assetParam = '&asset_code=USDC&asset_issuer=GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN';
+      } else if (selectedCurrency === 'EURC') {
+        assetParam = '&asset_code=EURC&asset_issuer=GDUKMGUGDZQK6YHYA5Z6AY2G4XDSZPSZ3SW5UN3ARVMO6QSRDWP5YLEX';
+      } else if (selectedCurrency === 'AKOFA') {
+        assetParam = '&asset_code=AKOFA&asset_issuer=GBXLZ3FG6T7Q4P7X5Z6Z7Q4P7X5Z6Z7Q4P7X5Z6Z7Q4P7X5Z6Z7Q4P7';
+      } else {
+        assetParam = '&asset_code=XLM';
+      }
+
+      const sep7 = `web+stellar:pay?destination=${auctionOrder.payAddress}&amount=${auctionOrder.displayPrice}&memo=${auctionOrder._id}${assetParam}`;
+      
+      return res.json({
+        orderId: auctionOrder._id,
+        address: auctionOrder.payAddress,
+        amount: auctionOrder.displayPrice,
+        memo: auctionOrder._id,
+        sep7,
+        orderType: 'auction'
+      });
+    }
+
+    // Regular product payment flow (non-auction)
     const sellerWallet = 'GAHK7EEG2WWHVKDNT4CEQFZGKF2LGDSW2IVM4S5DP42RBW3K6BTODB4A';
 
     // Calculate total price in display currency
@@ -141,7 +210,8 @@ exports.createStellarPayment = async (req, res) => {
       payAddress: sellerWallet,
       displayCurrency: currency || 'XLM',
       displayPrice,
-      usdcPrice
+      usdcPrice,
+      orderType: 'regular'
     });
     await order.save();
 

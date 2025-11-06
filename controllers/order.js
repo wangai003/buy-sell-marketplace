@@ -10,10 +10,15 @@ exports.getBuyerOrders = async (req, res) => {
       return res.status(400).json({ error: 'Invalid buyer ID' });
     }
     
+    // ✅ SECURITY CHECK: Validate buyerId matches authenticated user
+    if (req.user && req.user._id.toString() !== buyerId) {
+      return res.status(403).json({ error: 'Unauthorized: You can only view your own orders' });
+    }
+    
     const orders = await Order.find({ buyerId })
       .populate({
         path: 'productId',
-        select: 'name images price',
+        select: 'name images price isAuction',
         model: 'Product'
       })
       .populate({
@@ -49,10 +54,15 @@ exports.getSellerOrders = async (req, res) => {
       return res.status(400).json({ error: 'Invalid seller ID' });
     }
     
+    // ✅ SECURITY CHECK: Validate sellerId matches authenticated user
+    if (req.user && req.user._id.toString() !== sellerId) {
+      return res.status(403).json({ error: 'Unauthorized: You can only view your own seller orders' });
+    }
+    
     const orders = await Order.find({ sellerId })
       .populate({
         path: 'productId',
-        select: 'name images price',
+        select: 'name images price isAuction',
         model: 'Product'
       })
       .populate({

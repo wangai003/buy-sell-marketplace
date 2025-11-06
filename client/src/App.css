@@ -48,7 +48,7 @@ body {
   transition: all 0.3s ease;
 }
 .nav-link {
-  color: #fbfbfd !important;
+  color: #333 !important;
   /* color: #263b5e !important; */
   font-size: 0.95rem;
   font-weight: 600;
@@ -100,7 +100,7 @@ ul.dropdown-menu {
   left: -3rem !important;
 }
 ul.dropdown-menu .nav-link {
-  color: #263b5e !important;
+  color: #333 !important;
 }
 ul.dropdown-menu .nav-link:hover {
   color: var(--accent-green) !important;

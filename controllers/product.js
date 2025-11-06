@@ -4,6 +4,7 @@ const Category = require('../models/Category');
 const Location = require('../models/Location');
 const Report = require('../models/Report');
 const Bid = require('../models/Bid');
+const Order = require('../models/Order');
 const cloudinary = require('../config/cloudinary').v2;
 const {
   setNotificationToUnread,
@@ -659,6 +660,23 @@ exports.processEndedAuctions = async (req, res) => {
 
     for (const auction of endedAuctions) {
       try {
+        // ✅ SECURITY CHECK 1: Check if order already exists (prevent duplicate)
+        const existingOrder = await Order.findOne({
+          productId: auction._id,
+          status: { $in: ['AWAITING_PAYMENT', 'PENDING', 'DELIVERING', 'COMPLETED', 'PENDING_PAY', 'PAID'] }
+        });
+
+        if (existingOrder) {
+          console.log(`Order already exists for auction ${auction._id}, skipping...`);
+          results.push({
+            auctionId: auction._id,
+            status: 'already_processed',
+            orderId: existingOrder._id,
+            message: 'Order already exists'
+          });
+          continue; // Skip this auction
+        }
+
         // Find the highest bid
         const bids = await Bid.find({ product: auction._id })
           .populate('bidder')
@@ -670,17 +688,51 @@ exports.processEndedAuctions = async (req, res) => {
           const winner = winningBid.bidder;
           const seller = auction.author;
 
-          // Create order
+          // ✅ SECURITY CHECK 2: Validate winner exists
+          if (!winner) {
+            console.error(`Winner not found for auction ${auction._id}`);
+            results.push({
+              auctionId: auction._id,
+              status: 'error',
+              error: 'Winner not found'
+            });
+            continue;
+          }
+
+          // ✅ SECURITY CHECK 3: Validate seller exists
+          if (!seller) {
+            console.error(`Seller not found for auction ${auction._id}`);
+            results.push({
+              auctionId: auction._id,
+              status: 'error',
+              error: 'Seller not found'
+            });
+            continue;
+          }
+
+          // Get currency from product or default to USD
+          const currency = auction.currency || 'USD';
+          const displayPrice = winningBid.amount;
+          
+          // For now, usdcPrice is same as displayPrice (can add conversion later)
+          const usdcPrice = displayPrice;
+
+          // Create order with all required fields (SYSTEM CREATED - no user input)
           const order = new Order({
             productId: auction._id,
             productName: auction.name,
-            price: winningBid.amount,
-            buyerId: winner._id,
+            price: usdcPrice, // Store USDC amount for payment
+            buyerId: winner._id, // ✅ Only winner's ID
             buyerName: winner.name,
             sellerId: seller._id,
             sellerName: seller.name,
-            sellerWallet: seller.wallet,
+            sellerWallet: seller.wallet || 'GAHK7EEG2WWHVKDNT4CEQFZGKF2LGDSW2IVM4S5DP42RBW3K6BTODB4A',
             status: 'AWAITING_PAYMENT',
+            orderType: 'auction', // ✅ Mark as auction order
+            quantity: 1, // Auctions are typically single item
+            displayCurrency: currency,
+            displayPrice: displayPrice,
+            usdcPrice: usdcPrice,
             statusHistory: [{
               status: 'AWAITING_PAYMENT',
               changedAt: new Date()
