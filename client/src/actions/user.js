@@ -95,3 +95,53 @@ export const setMsgToUnread = async (userId) =>
   await axios.post(`${process.env.REACT_APP_API}/user/unread-message`, userId);
 export const markMessageRead = async (userId) =>
   await axios.post(`${process.env.REACT_APP_API}/user/read-message`, userId);
+
+export const submitSellerApplication = async (userId, formData, token) =>
+  await axios.post(
+    `${process.env.REACT_APP_API}/user/become-seller/${userId}`,
+    formData,
+    {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+export const getStoresForYou = async (userId, token) =>
+  await axios.get(`${process.env.REACT_APP_API}/for-you/stores/${userId}`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+export const getPotentialConnections = async (sellerId, token) =>
+  await axios.get(`${process.env.REACT_APP_API}/seller/potential-connections/${sellerId}`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+export const getConnectedBuyers = async (sellerId, token) =>
+  await axios.get(`${process.env.REACT_APP_API}/seller/connected-buyers/${sellerId}`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+export const createConnection = async (sellerId, buyerId, token) =>
+  await axios.post(
+    `${process.env.REACT_APP_API}/seller/create-connection`,
+    { sellerId, buyerId },
+    {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );

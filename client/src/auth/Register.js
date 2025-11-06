@@ -12,11 +12,16 @@ const Register = ({ history }) => {
     phone: '',
     password: '',
   });
+  const [interestedCategories, setInterestedCategories] = useState([]);
 
   const { name, username, email, phone, password } = values;
 
   const handleChange = (name) => (event) => {
     setValues({ ...values, [name]: event.target.value });
+  };
+
+  const handleCategoryChange = (categoryIds) => {
+    setInterestedCategories(categoryIds);
   };
 
   const handleSubmit = async (e) => {
@@ -28,13 +33,14 @@ const Register = ({ history }) => {
         email: email,
         phone: phone,
         password: password,
+        interestedCategories: interestedCategories,
       });
       console.log(res);
-      message.success('Regitration successful. Please login', 4);
+      message.success('Registration successful. Please login', 4);
       history.push('/login');
     } catch (err) {
       console.log(err);
-      if (err.response.status === 400) message.error(err.response.data, 4);
+      if (err.response && err.response.status === 400) message.error(err.response.data, 4);
     }
   };
   return (
@@ -45,11 +51,13 @@ const Register = ({ history }) => {
             <RegisterForm
               handleSubmit={handleSubmit}
               handleChange={handleChange}
+              handleCategoryChange={handleCategoryChange}
               name={name}
               username={username}
               email={email}
               phone={phone}
               password={password}
+              interestedCategories={interestedCategories}
             />
           </div>
         </div>

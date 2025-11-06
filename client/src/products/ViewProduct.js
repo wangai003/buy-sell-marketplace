@@ -135,7 +135,11 @@ const ViewProduct = ({ match, history }) => {
     setCategory(res.data.category);
     setProductLocation(res.data.location);
     setProductAuthor(res.data.author);
-    setProductAuthorName(res.data.author.name);
+    // Use business name if seller has business info, otherwise use user name
+    const authorName = res.data.author.canSell && res.data.author.businessName 
+      ? res.data.author.businessName 
+      : res.data.author.name;
+    setProductAuthorName(authorName);
     var imageArray = res.data.images
       .slice(0)
       .map((item, index) => ({ original: item, thumbnail: item }));
@@ -441,7 +445,9 @@ const ViewProduct = ({ match, history }) => {
                 </Descriptions.Item>
               )}
               <Descriptions.Item label='Seller' style={{ color: '#333' }}>
-                {productAuthor.name}
+                {productAuthor.canSell && productAuthor.businessName 
+                  ? productAuthor.businessName 
+                  : productAuthor.name}
               </Descriptions.Item>
               <Descriptions.Item label='Product Status' style={{ color: '#333' }}>
                 <span className='capitalize'>{product.status}</span>
@@ -497,10 +503,19 @@ const ViewProduct = ({ match, history }) => {
               className='border-0'
               cover={
                 <Avatar
-                  src={productAuthor.photo}
+                  src={productAuthor.canSell && productAuthor.businessLogo 
+                    ? productAuthor.businessLogo 
+                    : productAuthor.photo}
                   className='mx-auto mt-3 avatar-user'
                   size={120}
-                  style={{ marginBottom: '-13px' }}
+                  style={productAuthor.canSell && productAuthor.businessLogo 
+                    ? { 
+                        marginBottom: '-13px',
+                        border: '3px solid #FFD700'
+                      }
+                    : { 
+                        marginBottom: '-13px'
+                      }}
                 >
                   {productAuthorName[0]}
                 </Avatar>
@@ -512,11 +527,15 @@ const ViewProduct = ({ match, history }) => {
                   user && token ? (
                     <Tooltip title={`Call ${productAuthorName}`}>
                       <a
-                        href={`tel:${productAuthor.phone}`}
+                        href={`tel:${productAuthor.canSell && productAuthor.businessPhone 
+                          ? productAuthor.businessPhone 
+                          : productAuthor.phone}`}
                         className='text-decoration-none text-dark1 text-muted bg-light text-center p-2 pe-5 ps-5 bg-light'
                       >
                         <i class='fas fa-phone-alt'></i>{' '}
-                        <span>{productAuthor.phone}</span>
+                        <span>{productAuthor.canSell && productAuthor.businessPhone 
+                          ? productAuthor.businessPhone 
+                          : productAuthor.phone}</span>
                       </a>
                     </Tooltip>
                   ) : (

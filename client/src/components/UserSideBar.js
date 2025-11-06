@@ -13,6 +13,7 @@ const UserSideBar = ({
   positiveRatings,
   negativeRatings,
   wallet,
+  sellerCategories,
 }) => {
   const { user } = isAuthenticated();
 
@@ -27,6 +28,16 @@ const UserSideBar = ({
     history.location.pathname === '/user/favourites' ||
     history.location.pathname === '/user/follow-list';
 
+  // Determine if user is a seller and has business info
+  const isSeller = user && user.canSell;
+  const displayLogo = isSeller && user.businessLogo ? user.businessLogo : user.photo;
+  const displayName = isSeller && user.businessName ? user.businessName : user.name;
+  const displayPhone = isSeller && user.businessPhone ? user.businessPhone : user.phone;
+  const displayUsername = user.username;
+
+  // Get social media links
+  const socialMediaLinks = user.socialMediaLinks || {};
+
   return (
     <div className='col-md-3 mb-5'>
       <Card
@@ -34,34 +45,128 @@ const UserSideBar = ({
         style={{ width: 'auto' }}
         cover={
           <Avatar
-            src={user.photo}
+            src={displayLogo}
             className='mx-auto mt-3 avatar-user'
             size={130}
+            style={isSeller && user.businessLogo ? { border: '3px solid #FFD700' } : {}}
           >
-            {user.name[0]}
+            {!displayLogo && displayName[0]}
           </Avatar>
         }
       >
         <div className='text-center'>
-          <h5>({user.username})</h5>
+          {isSeller ? (
+            <div>
+              <h5 style={{ color: '#228B22', fontWeight: 'bold' }}>
+                <i className='fas fa-store me-2'></i>
+                {displayName}
+              </h5>
+              <small style={{ color: '#666' }}>({displayUsername})</small>
+            </div>
+          ) : (
+            <h5>({displayUsername})</h5>
+          )}
         </div>
         <Meta
-          title={user.name}
-          description={user.phone}
+          title={isSeller ? 'Business' : displayName}
+          description={displayPhone}
           className='text-center user-details'
         />
-        {user.location && user.location !== 'undefined' && (
+        
+        {/* Business Information for Sellers */}
+        {isSeller && (
+          <>
+            {user.businessPhone && (
+              <div className='text-center mt-2 bg-light'>
+                <h6 className='p-1' style={{ color: 'rgba(0, 0, 0, 0.45)' }}>
+                  <i className='fas fa-phone me-2'></i>
+                  {user.businessPhone}
+                </h6>
+              </div>
+            )}
+            
+            {/* Social Media Links */}
+            {Object.keys(socialMediaLinks).length > 0 && (
+              <div className='text-center mt-2 bg-light p-2'>
+                <h6 style={{ color: 'rgba(0, 0, 0, 0.45)', marginBottom: '8px', fontSize: '12px' }}>
+                  <i className='fas fa-share-alt me-2'></i>Social Media
+                </h6>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {socialMediaLinks.facebook && (
+                    <a href={socialMediaLinks.facebook} target='_blank' rel='noopener noreferrer' style={{ color: '#1877F2', fontSize: '18px' }}>
+                      <i className='fab fa-facebook'></i>
+                    </a>
+                  )}
+                  {socialMediaLinks.instagram && (
+                    <a href={socialMediaLinks.instagram} target='_blank' rel='noopener noreferrer' style={{ color: '#E4405F', fontSize: '18px' }}>
+                      <i className='fab fa-instagram'></i>
+                    </a>
+                  )}
+                  {socialMediaLinks.twitter && (
+                    <a href={socialMediaLinks.twitter} target='_blank' rel='noopener noreferrer' style={{ color: '#1DA1F2', fontSize: '18px' }}>
+                      <i className='fab fa-twitter'></i>
+                    </a>
+                  )}
+                  {socialMediaLinks.linkedin && (
+                    <a href={socialMediaLinks.linkedin} target='_blank' rel='noopener noreferrer' style={{ color: '#0077B5', fontSize: '18px' }}>
+                      <i className='fab fa-linkedin'></i>
+                    </a>
+                  )}
+                  {socialMediaLinks.website && (
+                    <a href={socialMediaLinks.website} target='_blank' rel='noopener noreferrer' style={{ color: '#333', fontSize: '18px' }}>
+                      <i className='fas fa-globe'></i>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Seller Categories */}
+            {sellerCategories && sellerCategories.length > 0 && (
+              <div className='text-center mt-2 bg-light p-2'>
+                <h6 style={{ color: 'rgba(0, 0, 0, 0.45)', marginBottom: '8px', fontSize: '12px' }}>
+                  <i className='fas fa-tags me-2'></i>Categories ({sellerCategories.length})
+                </h6>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
+                  {sellerCategories.slice(0, 5).map((cat, idx) => (
+                    <span 
+                      key={idx} 
+                      style={{ 
+                        fontSize: '10px', 
+                        padding: '2px 6px', 
+                        background: '#FFD700', 
+                        color: '#228B22', 
+                        borderRadius: '4px' 
+                      }}
+                    >
+                      {cat.name || cat}
+                    </span>
+                  ))}
+                  {sellerCategories.length > 5 && (
+                    <span style={{ fontSize: '10px', color: '#666' }}>
+                      +{sellerCategories.length - 5} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Personal Information for Non-Sellers */}
+        {!isSeller && user.location && user.location !== 'undefined' && (
           <div className='text-center mt-2 bg-light'>
             <h6 className='p-1' style={{ color: 'rgba(0, 0, 0, 0.45)' }}>
-              <i class='fas fa-map-marker-alt me-2'></i>
+              <i className='fas fa-map-marker-alt me-2'></i>
               {user.location} State
             </h6>
           </div>
         )}
+        
         {wallet && (
           <div className='text-center mt-2 bg-light'>
             <h6 className='p-1' style={{ color: 'rgba(0, 0, 0, 0.45)' }}>
-              <i class='fas fa-wallet me-2'></i>
+              <i className='fas fa-wallet me-2'></i>
               Wallet: {wallet.substring(0, 10)}...
             </h6>
           </div>

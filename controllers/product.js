@@ -14,6 +14,15 @@ const {
 
 exports.addProduct = async (req, res) => {
     try {
+      // Check if user has permission to sell
+      const user = await User.findById(req.params.userId).exec();
+      if (!user) {
+        return res.status(404).send('User not found');
+      }
+      if (!user.canSell) {
+        return res.status(403).send('You do not have permission to sell on this platform. Please contact an administrator to request seller privileges.');
+      }
+
       const { name, category, subcategory, element, location, description, condition, price, images, isAuction, startingBid, duration } =
         req.body;
       //validation
@@ -90,7 +99,7 @@ exports.addProduct = async (req, res) => {
 
       const product = new Product(productData);
       const newProduct = await product.save();
-      const user = await User.findById(req.params.userId).exec();
+      // User already fetched above, just update products array
       user.products.push(product._id);
       user.save();
       return res.json({ product: newProduct });
@@ -728,5 +737,37 @@ exports.processEndedAuctions = async (req, res) => {
   } catch (err) {
     console.log('PROCESS ENDED AUCTIONS FAILED', err);
     return res.status(500).send('Internal server error');
+  }
+};
+
+exports.getProductsForYou = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId).exec();
+    
+    if (!user || !user.interestedCategories || user.interestedCategories.length === 0) {
+      return res.json([]);
+    }
+
+    // Find products where the element (final category level) matches user's interested categories
+    const products = await Product.find({
+      element: { $in: user.interestedCategories },
+      status: 'active'
+    }).populate('author category subcategory element location');
+
+    // Convert any HTTP image URLs to HTTPS
+    const sanitizedProducts = products.map(product => {
+      if (product.images && Array.isArray(product.images)) {
+        product.images = product.images.map(url =>
+          url ? url.replace(/^http:\/\//i, 'https://') : url
+        );
+      }
+      return product;
+    });
+
+    return res.json(sanitizedProducts);
+  } catch (err) {
+    console.log('GET PRODUCTS FOR YOU FAILED', err);
+    return res.status(500).json({ error: 'Database connection failed', details: err.message });
   }
 };

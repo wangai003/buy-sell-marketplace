@@ -29,12 +29,17 @@ const AddProduct = ({ match }) => {
   const [startingBid, setStartingBid] = useState('');
   const [duration, setDuration] = useState('');
 
-  const { token } = isAuthenticated();
+  const { token, user } = isAuthenticated();
   const { name, category, subcategory, element, location, description, condition, price } = values;
 
   useEffect(() => {
     loadLocations();
-  }, []);
+    // Check if user has seller permission
+    if (user && !user.canSell) {
+      message.error('You do not have permission to sell on this platform. Please contact an administrator to request seller privileges.', 6);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
     // Update values when selectedCategories changes
@@ -75,6 +80,54 @@ const AddProduct = ({ match }) => {
   };
 
   const history = useHistory();
+
+  // Early return if user doesn't have seller permission
+  if (user && !user.canSell) {
+    return (
+      <div className='container-fluid profile-settings-container mt-5'>
+        <div className='row'>
+          <div className='col-md-8 mx-auto mb-5'>
+            <div style={{
+              background: 'linear-gradient(to bottom, #FFD700, #FFFFFF)',
+              borderRadius: '10px',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+              padding: '40px',
+              margin: '20px 0',
+              textAlign: 'center'
+            }}>
+              <h2 style={{ color: '#333', marginBottom: '20px' }}>
+                <i className='fas fa-exclamation-triangle' style={{ color: '#ff6b6b', marginRight: '10px' }}></i>
+                Seller Permission Required
+              </h2>
+              <p style={{ fontSize: '18px', color: '#555', marginBottom: '30px' }}>
+                You do not have permission to sell on this platform.
+              </p>
+              <p style={{ fontSize: '16px', color: '#666', marginBottom: '30px' }}>
+                All registered users can browse and buy items, but seller privileges must be approved by an administrator.
+              </p>
+              <p style={{ fontSize: '14px', color: '#777' }}>
+                Please contact an administrator to request seller privileges.
+              </p>
+              <Button
+                type='primary'
+                size='large'
+                onClick={() => history.push('/user/dashboard')}
+                style={{
+                  marginTop: '20px',
+                  background: 'linear-gradient(to right, #33b27b, #28a745)',
+                  border: 'none',
+                  borderRadius: '20px',
+                  padding: '10px 30px'
+                }}
+              >
+                Back to Dashboard
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (formValues) => {
     // Validation for auction fields
@@ -123,7 +176,16 @@ const AddProduct = ({ match }) => {
       history.push('/user/pending-products');
     } catch (err) {
       console.log(err);
-      if (err.response && err.response.status === 400) message.error(err.response.data, 4);
+      if (err.response) {
+        if (err.response.status === 403) {
+          message.error(err.response.data || 'You do not have permission to sell on this platform. Please contact an administrator to request seller privileges.', 6);
+          history.push('/user/dashboard');
+        } else if (err.response.status === 400) {
+          message.error(err.response.data, 4);
+        } else {
+          message.error('An error occurred. Please try again.', 4);
+        }
+      }
     }
   };
 

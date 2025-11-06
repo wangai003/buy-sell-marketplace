@@ -24,13 +24,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Public routes
-router.get('/active', getActiveAdvertisements);
+router.get('/advertisement/active', getActiveAdvertisements);
 
 // Admin routes
-router.get('/all', requireSignin, adminMiddleware, getAllAdvertisements);
-router.post('/create', requireSignin, adminMiddleware, upload.single('image'), createAdvertisement);
-router.put('/update/:id', requireSignin, adminMiddleware, upload.single('image'), updateAdvertisement);
-router.delete('/delete/:id', requireSignin, adminMiddleware, deleteAdvertisement);
-router.put('/toggle/:id', requireSignin, adminMiddleware, toggleAdvertisementStatus);
+router.get('/admin/advertisements/all', requireSignin, adminMiddleware, getAllAdvertisements);
+router.post('/admin/advertisements/create', requireSignin, adminMiddleware, upload.single('image'), createAdvertisement);
+router.put('/admin/advertisements/update/:id', requireSignin, adminMiddleware, upload.single('image'), updateAdvertisement);
+router.delete('/admin/advertisements/delete/:id', requireSignin, adminMiddleware, deleteAdvertisement);
+router.put('/admin/advertisements/toggle/:id', requireSignin, adminMiddleware, toggleAdvertisementStatus);
 
 module.exports = router;

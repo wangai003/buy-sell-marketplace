@@ -12,7 +12,7 @@ import io from 'socket.io-client';
 const { Meta } = Card;
 
 const UserDashboard = () => {
-  const { user } = isAuthenticated();
+  const { user, token } = isAuthenticated();
   const countPerPage = 5;
   const [values, setValues] = useState({
     _id: '',
@@ -21,6 +21,7 @@ const UserDashboard = () => {
     products: [],
     favourites: [],
     wallet: '',
+    sellerCategories: [],
   });
 
   const styles = {
@@ -65,7 +66,7 @@ const UserDashboard = () => {
   const [deliveryProvider, setDeliveryProvider] = useState('');
   const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState(null);
 
-  const { _id, products, followers, following, favourites, wallet } = values;
+  const { _id, products, followers, following, favourites, wallet, sellerCategories } = values;
 
   const loadUser = async () => {
     let res = await viewUser(user._id);
@@ -87,6 +88,7 @@ const UserDashboard = () => {
       products: res.data.products,
       favourites: res.data.favourites,
       wallet: res.data.wallet || '',
+      sellerCategories: res.data.sellerCategories || [],
     });
   };
 
@@ -102,10 +104,10 @@ const UserDashboard = () => {
 
   const loadOrders = async () => {
     try {
-      const buyerRes = await getBuyerOrders(user._id);
+      const buyerRes = await getBuyerOrders(user._id, token);
       setOrders(buyerRes.data);
 
-      const sellerRes = await getSellerOrders(user._id);
+      const sellerRes = await getSellerOrders(user._id, token);
       setSellerOrders(sellerRes.data);
     } catch (err) {
       console.log(err);
@@ -206,10 +208,176 @@ const UserDashboard = () => {
           positiveRatings={positiveRatings}
           negativeRatings={negativeRatings}
           wallet={wallet}
+          sellerCategories={sellerCategories}
         />
         <div className='col-md-9 mb-5'>
-          {/* Wallet Section */}
-          {!wallet && (
+          {/* Become Seller Section - Only show for non-sellers */}
+          {!user.canSell && (
+            <div className='card rounded-0 profile-card card-shadow mb-4' style={styles.card}>
+              <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+                <h4 style={styles.text}>Become a Seller</h4>
+              </div>
+              <div className='card-body'>
+                <p style={styles.text}>
+                  Want to start selling on our platform? Complete your business profile to get started!
+                </p>
+                <Link to={`/user/become-seller/${user._id}`} className='btn' style={styles.button}>
+                  <i className='fas fa-store me-2'></i> Become a Seller
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Business Information Section - Only show for sellers */}
+          {user.canSell && user.businessName && (
+            <div className='card rounded-0 profile-card card-shadow mb-4' style={styles.card}>
+              <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700', background: 'linear-gradient(to right, #FFD700, #FFFFFF)'}}>
+                <div className='d-flex align-items-center'>
+                  {user.businessLogo && (
+                    <img 
+                      src={user.businessLogo} 
+                      alt='Business Logo' 
+                      style={{ 
+                        width: '50px', 
+                        height: '50px', 
+                        borderRadius: '8px', 
+                        marginRight: '15px',
+                        objectFit: 'cover',
+                        border: '2px solid #228B22'
+                      }} 
+                    />
+                  )}
+                  <div>
+                    <h4 style={styles.text}>
+                      <i className='fas fa-store me-2'></i>
+                      {user.businessName}
+                    </h4>
+                    {user.businessPhone && (
+                      <small style={{ color: '#666' }}>
+                        <i className='fas fa-phone me-1'></i>
+                        {user.businessPhone}
+                      </small>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className='card-body'>
+                <div className='row'>
+                  {user.socialMediaLinks && Object.keys(user.socialMediaLinks).length > 0 && (
+                    <div className='col-md-6 mb-3'>
+                      <h6 style={styles.text}>
+                        <i className='fas fa-share-alt me-2'></i>Social Media
+                      </h6>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        {user.socialMediaLinks.facebook && (
+                          <a 
+                            href={user.socialMediaLinks.facebook} 
+                            target='_blank' 
+                            rel='noopener noreferrer' 
+                            style={{ fontSize: '20px', color: '#1877F2' }}
+                            title='Facebook'
+                          >
+                            <i className='fab fa-facebook'></i>
+                          </a>
+                        )}
+                        {user.socialMediaLinks.instagram && (
+                          <a 
+                            href={user.socialMediaLinks.instagram} 
+                            target='_blank' 
+                            rel='noopener noreferrer' 
+                            style={{ fontSize: '20px', color: '#E4405F' }}
+                            title='Instagram'
+                          >
+                            <i className='fab fa-instagram'></i>
+                          </a>
+                        )}
+                        {user.socialMediaLinks.twitter && (
+                          <a 
+                            href={user.socialMediaLinks.twitter} 
+                            target='_blank' 
+                            rel='noopener noreferrer' 
+                            style={{ fontSize: '20px', color: '#1DA1F2' }}
+                            title='Twitter'
+                          >
+                            <i className='fab fa-twitter'></i>
+                          </a>
+                        )}
+                        {user.socialMediaLinks.linkedin && (
+                          <a 
+                            href={user.socialMediaLinks.linkedin} 
+                            target='_blank' 
+                            rel='noopener noreferrer' 
+                            style={{ fontSize: '20px', color: '#0077B5' }}
+                            title='LinkedIn'
+                          >
+                            <i className='fab fa-linkedin'></i>
+                          </a>
+                        )}
+                        {user.socialMediaLinks.website && (
+                          <a 
+                            href={user.socialMediaLinks.website} 
+                            target='_blank' 
+                            rel='noopener noreferrer' 
+                            style={{ fontSize: '20px', color: '#333' }}
+                            title='Website'
+                          >
+                            <i className='fas fa-globe'></i>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {sellerCategories && sellerCategories.length > 0 && (
+                    <div className='col-md-6 mb-3'>
+                      <h6 style={styles.text}>
+                        <i className='fas fa-tags me-2'></i>Business Categories ({sellerCategories.length})
+                      </h6>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                        {sellerCategories.slice(0, 8).map((cat, idx) => (
+                          <span 
+                            key={idx} 
+                            style={{ 
+                              fontSize: '11px', 
+                              padding: '4px 8px', 
+                              background: '#FFD700', 
+                              color: '#228B22', 
+                              borderRadius: '4px',
+                              fontWeight: '500'
+                            }}
+                          >
+                            {cat.name || cat}
+                          </span>
+                        ))}
+                        {sellerCategories.length > 8 && (
+                          <span style={{ fontSize: '11px', color: '#666', padding: '4px 8px' }}>
+                            +{sellerCategories.length - 8} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className='mt-3 text-center'>
+                  <Link 
+                    to='/seller/connections' 
+                    className='btn' 
+                    style={{
+                      ...styles.button,
+                      borderRadius: '20px',
+                      padding: '8px 20px',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <i className='fas fa-users me-2'></i>
+                    Manage Connections
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Wallet Section - Only show for sellers */}
+          {user.canSell && !wallet && (
             <div className='card rounded-0 profile-card card-shadow mb-4' style={styles.card}>
               <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
                 <h4 style={styles.text}>Wallet Setup</h4>
@@ -290,11 +458,12 @@ const UserDashboard = () => {
             </div>
           </div>
 
-          {/* Seller Orders Section */}
-          <div className='card rounded-0 profile-card card-shadow mb-4' style={styles.card}>
-            <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
-              <h4 style={styles.text}>Incoming Orders (Seller)</h4>
-            </div>
+          {/* Seller Orders Section - Only show for sellers */}
+          {user.canSell && (
+            <div className='card rounded-0 profile-card card-shadow mb-4' style={styles.card}>
+              <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
+                <h4 style={styles.text}>Incoming Orders (Seller)</h4>
+              </div>
             <div className='card-body'>
               {sellerOrders.length === 0 ? (
                 <Empty description="No incoming orders" />
@@ -364,9 +533,11 @@ const UserDashboard = () => {
               )}
             </div>
           </div>
+          )}
 
-          {/* Products Section */}
-          <div className='card rounded-0 profile-card card-shadow' style={styles.card}>
+          {/* Products Section - Only show for sellers */}
+          {user.canSell && (
+            <div className='card rounded-0 profile-card card-shadow' style={styles.card}>
             <div className='d-flex justify-content-between card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
               {filter === 'active' && <h2 style={styles.text}>Active Products</h2>}
               {filter === 'pending' && <h2 style={styles.text}>Pending Products</h2>}
@@ -740,6 +911,7 @@ const UserDashboard = () => {
               )}
             </div>
           </div>
+          )}
 
           {/* Modal for marking as delivering */}
           <Modal

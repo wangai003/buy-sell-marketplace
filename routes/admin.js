@@ -9,6 +9,8 @@ const {
   deleteUser,
   banUser,
   unbanUser,
+  approveSeller,
+  revokeSeller,
   addCategory,
   allCategories,
   getCategory,
@@ -35,7 +37,7 @@ const {
 } = require('../controllers/admin');
 const { userProfile } = require('../controllers/user');
 // middlewares
-const { requireSignin } = require('../middlewares');
+const { requireSignin, adminMiddleware } = require('../middlewares');
 
 //routes
 router.get('/admin/users', users);
@@ -49,6 +51,8 @@ router.put(
 router.post('/admin/user/delete/:userId', deleteUser);
 router.post('/admin/user/ban/:userId', banUser);
 router.post('/admin/user/unban/:userId', unbanUser);
+router.post('/admin/user/approve-seller/:userId', approveSeller);
+router.post('/admin/user/revoke-seller/:userId', revokeSeller);
 router.get('/admin/categories', allCategories);
 router.get('/admin/categories/hierarchy', getCategoryHierarchy);
 router.get('/admin/categories/level', getCategoriesByLevel);
@@ -70,6 +74,6 @@ router.post('/admin/approve-report/:productId', approveReport);
 router.post('/admin/reject-report/:productId', rejectReport);
 router.get('/admin/pending-pay-orders', getPendingPayOrders);
 router.post('/admin/pay-seller', requireSignin, paySeller);
-router.get('/admin/orders', getAllOrders);
+router.get('/admin/orders', requireSignin, adminMiddleware, getAllOrders);
 
 module.exports = router;

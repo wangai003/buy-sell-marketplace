@@ -147,3 +147,11 @@ export const placeBid = async (productId, bidData, token) =>
 
 export const getBids = async (productId) =>
   await axios.get(`${process.env.REACT_APP_API}/product/${productId}/bids`);
+
+export const getProductsForYou = async (userId, token) =>
+  await axios.get(`${process.env.REACT_APP_API}/for-you/products/${userId}`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });

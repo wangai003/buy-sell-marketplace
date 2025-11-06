@@ -28,6 +28,7 @@ const {
   placeBid,
   getBids,
   processEndedAuctions,
+  getProductsForYou,
 } = require('../controllers/product');
 
 //routes
@@ -61,5 +62,6 @@ router.get('/related-products/:categoryId', relatedProducts);
 router.post('/product/:productId/bid', requireSignin, placeBid);
 router.get('/product/:productId/bids', getBids);
 router.post('/process-ended-auctions', processEndedAuctions);
+router.get('/for-you/products/:userId', requireSignin, getProductsForYou);
 
 module.exports = router;

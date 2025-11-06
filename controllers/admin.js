@@ -130,6 +130,50 @@ exports.unbanUser = async (req, res) => {
   }
 };
 
+exports.approveSeller = async (req, res) => {
+  const { adminRole } = req.body;
+  try {
+    //validate admin
+    if (adminRole !== 'admin')
+      return res
+        .status(400)
+        .send('You are not authorized to perform this action');
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+    user.canSell = true;
+    user.save();
+    return res.json(user);
+  } catch (err) {
+    console.log('APPROVE SELLER FAILED', err);
+    return res.status(400).send('Error. Try again');
+  }
+};
+
+exports.revokeSeller = async (req, res) => {
+  const { adminRole } = req.body;
+  try {
+    //validate admin
+    if (adminRole !== 'admin')
+      return res
+        .status(400)
+        .send('You are not authorized to perform this action');
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+    user.canSell = false;
+    user.save();
+    return res.json(user);
+  } catch (err) {
+    console.log('REVOKE SELLER FAILED', err);
+    return res.status(400).send('Error. Try again');
+  }
+};
+
 exports.addCategory = async (req, res) => {
   try {
     const { name, parent, type } = req.body;
@@ -534,12 +578,37 @@ exports.paySeller = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find({})
-      .populate('productId buyerId sellerId')
+      .populate({
+        path: 'productId',
+        select: 'name images price',
+        model: 'Product'
+      })
+      .populate({
+        path: 'buyerId',
+        select: 'name username email',
+        model: 'User'
+      })
+      .populate({
+        path: 'sellerId',
+        select: 'name username email businessName',
+        model: 'User'
+      })
       .sort({ createdAt: -1 })
+      .lean()
       .exec();
-    return res.json(orders);
+    
+    // Handle null references gracefully
+    const sanitizedOrders = orders.map(order => ({
+      ...order,
+      productId: order.productId || null,
+      buyerId: order.buyerId || null,
+      sellerId: order.sellerId || null
+    }));
+    
+    return res.json(sanitizedOrders);
   } catch (err) {
     console.log('GET ALL ORDERS FAILED', err);
-    return res.status(400).send('Error. Try again');
+    console.error('Error details:', err.stack);
+    return res.status(500).json({ error: 'Error fetching orders', details: err.message });
   }
 };

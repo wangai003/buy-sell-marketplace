@@ -20,7 +20,7 @@ const ManageAdvertisements = () => {
     try {
       setLoading(true);
       const token = getToken();
-      const res = await axios.get('/api/advertisement/all', {
+      const res = await axios.get(`${process.env.REACT_APP_API}/admin/advertisements/all`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAdvertisements(res.data);
@@ -54,7 +54,7 @@ const ManageAdvertisements = () => {
   const handleDelete = async (id) => {
     try {
       const token = getToken();
-      await axios.delete(`/api/advertisement/delete/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API}/admin/advertisements/delete/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       message.success('Advertisement deleted successfully');
@@ -68,7 +68,7 @@ const ManageAdvertisements = () => {
   const handleToggleStatus = async (id, currentStatus) => {
     try {
       const token = getToken();
-      await axios.put(`/api/advertisement/toggle/${id}`, {}, {
+      await axios.put(`${process.env.REACT_APP_API}/admin/advertisements/toggle/${id}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       message.success(`Advertisement ${currentStatus ? 'deactivated' : 'activated'} successfully`);
@@ -93,7 +93,7 @@ const ManageAdvertisements = () => {
       }
 
       if (editingAd) {
-        await axios.put(`/api/advertisement/update/${editingAd._id}`, formData, {
+        await axios.put(`${process.env.REACT_APP_API}/admin/advertisements/update/${editingAd._id}`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -101,7 +101,7 @@ const ManageAdvertisements = () => {
         });
         message.success('Advertisement updated successfully');
       } else {
-        await axios.post('/api/advertisement/create', formData, {
+        await axios.post(`${process.env.REACT_APP_API}/admin/advertisements/create`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'

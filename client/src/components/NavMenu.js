@@ -85,7 +85,7 @@ const NavMenu = () => {
   };
 
   const handleSell = () => {
-    if (isAuthenticated()) {
+    if (isAuthenticated() && user && user.canSell) {
       history.push(`/add-product/${user._id}`);
     } else {
       history.push('/login');
@@ -103,18 +103,27 @@ const NavMenu = () => {
           />
         </Link>
         <ul className='navbar-nav align-items-center ms-auto'>
-           <li className='nav-item ml-5 px-2'>
-             <Button
-               type='primary'
-               danger
-               size='large'
-               shape='round'
-               onClick={handleSell}
-               className='sellButton ml-5'
-             >
-               Sell a Product
-             </Button>
-           </li>
+          {user && token && (
+            <li className='nav-item ml-5 px-2'>
+              <Link className='nav-link' to='/for-you' style={{ color: '#fff', fontWeight: '500' }}>
+                <i className='fas fa-heart me-1'></i>For You
+              </Link>
+            </li>
+          )}
+           {user && user.canSell && (
+             <li className='nav-item ml-5 px-2'>
+               <Button
+                 type='primary'
+                 danger
+                 size='large'
+                 shape='round'
+                 onClick={handleSell}
+                 className='sellButton ml-5'
+               >
+                 Sell a Product
+               </Button>
+             </li>
+           )}
            <li className='nav-item ml-5 px-2'>
              <CurrencySelector />
            </li>

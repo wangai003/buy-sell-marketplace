@@ -6,6 +6,11 @@ const AddButton = () => {
   const { user } = isAuthenticated();
   const history = useHistory();
 
+  // Don't show the button at all if user doesn't have seller permission
+  if (!user || !user.canSell) {
+    return null;
+  }
+
   const handleSell = () => {
     if (isAuthenticated()) {
       history.push(`/add-product/${user._id}`);

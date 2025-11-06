@@ -28,6 +28,7 @@ import ReportedProducts from './admin/ReportedProducts';
 import EditUser from './admin/EditUser';
 import PrivateRoute from './auth/PrivateRoute';
 import AdminRoute from './auth/AdminRoute';
+import SellerRoute from './auth/SellerRoute';
 import EditProfile from './user/EditProfile';
 import UpdatePassword from './user/UpdatePassword';
 import ViewUser from './user/ViewUser';
@@ -48,6 +49,9 @@ import UserNotifications from './notifications/UserNotifications';
 import ChatList from './messages/ChatList';
 import Chat from './messages/Chat';
 import TermsAndConditions from './components/TermsAndConditions';
+import BecomeSeller from './user/BecomeSeller';
+import ForYou from './user/ForYou';
+import Connections from './user/Connections';
 
 function App() {
   const { user } = isAuthenticated();
@@ -83,6 +87,7 @@ function App() {
         <PrivateRoute exact path='/user/business' component={BusinessInfo} />
         <PrivateRoute exact path='/user/follow-list' component={FollowList} />
         <PrivateRoute exact path='/user/favourites' component={Favourites} />
+        <PrivateRoute exact path='/for-you' component={ForYou} />
         <PrivateRoute exact path='/user/:userId' component={ViewUser} />
         <PrivateRoute exact path='/rate/user/:userId' component={RateUser} />
         <PrivateRoute exact path='/user/edit/:userId' component={EditProfile} />
@@ -93,13 +98,23 @@ function App() {
         />
         <PrivateRoute
           exact
+          path='/user/become-seller/:userId'
+          component={BecomeSeller}
+        />
+        <SellerRoute
+          exact
           path='/add-product/:userId'
           component={AddProduct}
         />
-        <PrivateRoute
+        <SellerRoute
           exact
           path='/edit-product/:productId'
           component={EditProduct}
+        />
+        <SellerRoute
+          exact
+          path='/seller/connections'
+          component={Connections}
         />
         <AdminRoute exact path='/admin/dashboard' component={AdminDashboard} />
         <AdminRoute exact path='/admin/add-category' component={AddCategory} />

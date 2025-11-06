@@ -11,7 +11,7 @@ const AdvertisementCarousel = () => {
 
   const loadAdvertisements = async () => {
     try {
-      const res = await axios.get('/api/advertisement/active');
+      const res = await axios.get(`${process.env.REACT_APP_API}/advertisement/active`);
       setAdvertisements(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error('Error loading advertisements:', error);

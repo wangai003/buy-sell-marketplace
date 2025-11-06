@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const cloudinary = require('../config/cloudinary').v2;
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
 const {
   newFollowerNotification,
   removeFollowerNotification,
@@ -14,12 +15,16 @@ exports.userProfile = async (req, res) => {
       { path: 'products', populate: { path: 'author', select: '-password' } },
       { path: 'products', populate: { path: 'category' } },
       { path: 'products', populate: { path: 'location' } },
+      { path: 'sellerCategories' },
     ])
     .exec();
 
   // Convert any HTTP image URLs to HTTPS
   if (user.photo) {
     user.photo = user.photo.replace(/^http:\/\//i, 'https://');
+  }
+  if (user.businessLogo) {
+    user.businessLogo = user.businessLogo.replace(/^http:\/\//i, 'https://');
   }
   if (user.products && Array.isArray(user.products)) {
     user.products = user.products.map(product => {
@@ -53,7 +58,7 @@ exports.reduxUser = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email, username, phone, location, photo, wallet, _id } = req.body;
+    const { name, email, username, phone, location, photo, wallet, _id, interestedCategories } = req.body;
 
     //Validate User
     const profileOwner = req.params.userId === _id;
@@ -100,26 +105,44 @@ exports.updateProfile = async (req, res) => {
       wallet: wallet,
     };
 
+    // Handle interestedCategories if provided
+    if (interestedCategories !== undefined) {
+      updatedUser.interestedCategories = interestedCategories;
+    }
+
     for (let prop in updatedUser)
-      if (!updatedUser[prop]) delete updatedUser[prop];
+      if (!updatedUser[prop] && prop !== 'interestedCategories') delete updatedUser[prop];
 
     const user = await User.findOneAndUpdate(
       { _id: req.params.userId },
       { $set: updatedUser },
       { new: true, useFindAndModify: false }
     );
+    // Populate interestedCategories for response
+    const populatedUser = await User.findById(user._id)
+      .populate('interestedCategories')
+      .select('-password')
+      .exec();
+
     res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      username: user.username,
-      phone: user.phone,
-      photo: user.photo,
-      role: user.role,
-      location: user.location,
-      wallet: user.wallet,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      _id: populatedUser._id,
+      name: populatedUser.name,
+      email: populatedUser.email,
+      username: populatedUser.username,
+      phone: populatedUser.phone,
+      photo: populatedUser.photo,
+      role: populatedUser.role,
+      location: populatedUser.location,
+      wallet: populatedUser.wallet,
+      interestedCategories: populatedUser.interestedCategories,
+      canSell: populatedUser.canSell,
+      businessName: populatedUser.businessName,
+      businessLogo: populatedUser.businessLogo,
+      businessPhone: populatedUser.businessPhone,
+      socialMediaLinks: populatedUser.socialMediaLinks,
+      sellerCategories: populatedUser.sellerCategories,
+      createdAt: populatedUser.createdAt,
+      updatedAt: populatedUser.updatedAt,
     });
   } catch (err) {
     console.log('UPDATE USER FAILED', err);
@@ -303,5 +326,262 @@ exports.favouriteProducts = async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(500).send('Something went wrong. Try again');
+  }
+};
+
+exports.submitSellerApplication = async (req, res) => {
+  try {
+    const { businessName, businessPhone, socialMediaLinks, sellerCategories, _id, businessLogo } = req.body;
+
+    // Validate user
+    const profileOwner = req.params.userId === _id;
+    if (!profileOwner) {
+      return res.status(400).send('You are not authorized to perform this action');
+    }
+
+    // Validate required fields
+    if (!businessName || !businessPhone || !businessLogo) {
+      return res.status(400).send('Business name, phone, and logo are required');
+    }
+
+    // Validate at least one social media link
+    if (!socialMediaLinks || Object.keys(socialMediaLinks).length === 0) {
+      return res.status(400).send('Please provide at least one social media link');
+    }
+
+    // Validate at least one category selected
+    if (!sellerCategories || sellerCategories.length === 0) {
+      return res.status(400).send('Please select at least one category');
+    }
+
+    // Validate phone number format
+    let phoneno = /^\d{11}$/;
+    if (!businessPhone.match(phoneno)) {
+      return res.status(400).send('Business phone number must be 11 digits long');
+    }
+
+    // Get user
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+
+    // Upload business logo to Cloudinary if it's a new image
+    let logoUrl = '';
+    let logoId = '';
+    if (businessLogo && businessLogo.substring(11, 21) !== 'cloudinary') {
+      const logoUpload = await cloudinary.uploader.upload(businessLogo, {
+        folder: 'buynsell/businesslogos/',
+        secure: true,
+      });
+      logoUrl = logoUpload.secure_url;
+      logoId = logoUpload.public_id;
+    } else if (businessLogo) {
+      // Logo already uploaded, use existing URL
+      logoUrl = businessLogo;
+      logoId = user.businessLogo_id || '';
+    }
+
+    // Update user with business information
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: req.params.userId },
+      {
+        $set: {
+          businessName: businessName,
+          businessPhone: businessPhone,
+          businessLogo: logoUrl,
+          businessLogo_id: logoId,
+          socialMediaLinks: socialMediaLinks,
+          sellerCategories: sellerCategories,
+          canSell: true, // Automatically approve seller status
+        },
+      },
+      { new: true, useFindAndModify: false }
+    ).populate('sellerCategories');
+
+    updatedUser.password = undefined;
+    return res.json({
+      message: 'Seller application submitted successfully! You now have seller privileges.',
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.log('SUBMIT SELLER APPLICATION FAILED', err);
+    return res.status(500).send('Error submitting application. Try again');
+  }
+};
+
+exports.getStoresForYou = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId).exec();
+    
+    if (!user || !user.interestedCategories || user.interestedCategories.length === 0) {
+      return res.json([]);
+    }
+
+    // Find sellers whose sellerCategories intersect with user's interestedCategories
+    const sellers = await User.find({
+      canSell: true,
+      sellerCategories: { $in: user.interestedCategories }
+    })
+    .populate('sellerCategories')
+    .select('-password -favourites -followers -following -products -ratings')
+    .exec();
+
+    // Convert any HTTP image URLs to HTTPS
+    const sanitizedSellers = sellers.map(seller => {
+      if (seller.businessLogo) {
+        seller.businessLogo = seller.businessLogo.replace(/^http:\/\//i, 'https://');
+      }
+      if (seller.photo) {
+        seller.photo = seller.photo.replace(/^http:\/\//i, 'https://');
+      }
+      return seller;
+    });
+
+    return res.json(sanitizedSellers);
+  } catch (err) {
+    console.log('GET STORES FOR YOU FAILED', err);
+    return res.status(500).json({ error: 'Database connection failed', details: err.message });
+  }
+};
+
+// Get potential connections (buyers with matching interests who aren't connected)
+exports.getPotentialConnections = async (req, res) => {
+  try {
+    const sellerId = req.params.sellerId;
+    const seller = await User.findById(sellerId).exec();
+    
+    if (!seller || !seller.canSell || !seller.sellerCategories || seller.sellerCategories.length === 0) {
+      return res.json([]);
+    }
+
+    // Get seller's connected buyers IDs
+    const connectedBuyerIds = seller.connectedBuyers || [];
+
+    // Find buyers whose interestedCategories intersect with seller's sellerCategories
+    // and who are not already connected
+    const sellerObjectId = mongoose.Types.ObjectId.isValid(sellerId) 
+      ? mongoose.Types.ObjectId(sellerId) 
+      : sellerId;
+    const allExcludedIds = [
+      ...connectedBuyerIds,
+      sellerObjectId
+    ];
+    const potentialBuyers = await User.find({
+      _id: { $nin: allExcludedIds }, // Not already connected and not the seller themselves
+      interestedCategories: { $in: seller.sellerCategories },
+      canSell: false, // Only buyers, not other sellers
+    })
+    .populate('interestedCategories')
+    .select('-password -favourites -followers -following -products -ratings -sellerCategories -connectedBuyers')
+    .exec();
+
+    // Convert any HTTP image URLs to HTTPS
+    const sanitizedBuyers = potentialBuyers.map(buyer => {
+      if (buyer.photo) {
+        buyer.photo = buyer.photo.replace(/^http:\/\//i, 'https://');
+      }
+      return buyer;
+    });
+
+    return res.json(sanitizedBuyers);
+  } catch (err) {
+    console.log('GET POTENTIAL CONNECTIONS FAILED', err);
+    return res.status(500).json({ error: 'Database connection failed', details: err.message });
+  }
+};
+
+// Get connected buyers
+exports.getConnectedBuyers = async (req, res) => {
+  try {
+    const sellerId = req.params.sellerId;
+    const seller = await User.findById(sellerId)
+      .populate('connectedBuyers')
+      .exec();
+    
+    if (!seller || !seller.canSell) {
+      return res.json([]);
+    }
+
+    const connectedBuyers = seller.connectedBuyers || [];
+
+    // Populate interestedCategories for each connected buyer
+    const populatedBuyers = await User.find({
+      _id: { $in: connectedBuyers.map(b => b._id || b) }
+    })
+    .populate('interestedCategories')
+    .select('-password -favourites -followers -following -products -ratings -sellerCategories -connectedBuyers')
+    .exec();
+
+    // Convert any HTTP image URLs to HTTPS
+    const sanitizedBuyers = populatedBuyers.map(buyer => {
+      if (buyer.photo) {
+        buyer.photo = buyer.photo.replace(/^http:\/\//i, 'https://');
+      }
+      return buyer;
+    });
+
+    return res.json(sanitizedBuyers);
+  } catch (err) {
+    console.log('GET CONNECTED BUYERS FAILED', err);
+    return res.status(500).json({ error: 'Database connection failed', details: err.message });
+  }
+};
+
+// Create connection between seller and buyer
+exports.createConnection = async (req, res) => {
+  try {
+    const { sellerId, buyerId } = req.body;
+
+    if (!sellerId || !buyerId) {
+      return res.status(400).json({ error: 'Seller ID and Buyer ID are required' });
+    }
+
+    const seller = await User.findById(sellerId).exec();
+    const buyer = await User.findById(buyerId).exec();
+
+    if (!seller || !seller.canSell) {
+      return res.status(400).json({ error: 'Invalid seller' });
+    }
+
+    if (!buyer) {
+      return res.status(400).json({ error: 'Invalid buyer' });
+    }
+
+    // Check if already connected
+    const buyerObjectId = mongoose.Types.ObjectId.isValid(buyerId)
+      ? mongoose.Types.ObjectId(buyerId)
+      : buyerId;
+    const connectedBuyerIds = seller.connectedBuyers || [];
+    const isConnected = connectedBuyerIds.some(id => 
+      id.toString() === buyerObjectId.toString()
+    );
+    if (isConnected) {
+      return res.status(400).json({ error: 'Already connected with this buyer' });
+    }
+
+    // Add buyer to seller's connectedBuyers
+    if (!seller.connectedBuyers) {
+      seller.connectedBuyers = [];
+    }
+    seller.connectedBuyers.push(buyerId);
+    await seller.save();
+
+    return res.json({ 
+      message: 'Connection created successfully',
+      connectedBuyer: {
+        _id: buyer._id,
+        name: buyer.name,
+        username: buyer.username,
+        photo: buyer.photo,
+        email: buyer.email,
+        phone: buyer.phone,
+        interestedCategories: buyer.interestedCategories,
+      }
+    });
+  } catch (err) {
+    console.log('CREATE CONNECTION FAILED', err);
+    return res.status(500).json({ error: 'Database connection failed', details: err.message });
   }
 };

@@ -56,6 +56,32 @@ export const unBanUser = async (userId, admin, token) =>
     }
   );
 
+export const approveSeller = async (userId, admin, token) =>
+  await axios.post(
+    `${process.env.REACT_APP_API}/admin/user/approve-seller/${userId}`,
+    admin,
+    {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+export const revokeSeller = async (userId, admin, token) =>
+  await axios.post(
+    `${process.env.REACT_APP_API}/admin/user/revoke-seller/${userId}`,
+    admin,
+    {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
 export const addCategory = async (category) =>
   await axios.post(`${process.env.REACT_APP_API}/admin/add-category`, category);
 

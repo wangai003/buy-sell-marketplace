@@ -92,6 +92,49 @@ const UserSchema = new Schema(
       trim: true,
       required: false,
     },
+    canSell: {
+      type: Boolean,
+      default: false,
+    },
+    businessName: {
+      type: String,
+      trim: true,
+      required: false,
+    },
+    businessLogo: {
+      type: String,
+      required: false,
+    },
+    businessLogo_id: {
+      type: String,
+    },
+    businessPhone: {
+      type: String,
+      required: false,
+    },
+    socialMediaLinks: {
+      type: Map,
+      of: String,
+      default: {},
+    },
+    sellerCategories: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'category',
+      },
+    ],
+    interestedCategories: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'category',
+      },
+    ],
+    connectedBuyers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+      },
+    ],
   },
   { timestamps: true }
 );

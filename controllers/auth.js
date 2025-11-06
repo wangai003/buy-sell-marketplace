@@ -7,7 +7,7 @@ const Chat = require('../models/Chat');
 exports.register = async (req, res) => {
   try {
     console.log(req.body);
-    const { name, email, username, phone, password } = req.body;
+    const { name, email, username, phone, password, interestedCategories } = req.body;
     //validation
     if (!name || !email || !username || !phone || !password)
       return res.status(400).send('All fields are required');
@@ -34,6 +34,12 @@ exports.register = async (req, res) => {
     if (userNameExist) return res.status(400).send('Username already taken');
     //register user
     const user = new User(req.body);
+    // Set canSell to false by default for all new users
+    user.canSell = false;
+    // Set interestedCategories if provided
+    if (interestedCategories && Array.isArray(interestedCategories) && interestedCategories.length > 0) {
+      user.interestedCategories = interestedCategories;
+    }
 
     //hash password and save user
     bcrypt.genSalt(12, function (err, salt) {
@@ -81,7 +87,7 @@ exports.login = async (req, res) => {
       }
       console.log('password match', match);
       //Generate jwt signed token and send as reponse to client
-      let token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+      let token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, {
         expiresIn: '7d',
       });
 
@@ -114,6 +120,13 @@ exports.login = async (req, res) => {
           photo: user.photo,
           role: user.role,
           location: user.location,
+          canSell: user.canSell,
+          businessName: user.businessName,
+          businessLogo: user.businessLogo,
+          businessPhone: user.businessPhone,
+          socialMediaLinks: user.socialMediaLinks,
+          sellerCategories: user.sellerCategories,
+          interestedCategories: user.interestedCategories,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         },

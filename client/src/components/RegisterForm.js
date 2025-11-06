@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from 'antd';
+import MultiHierarchicalSelector from './MultiHierarchicalSelector';
 
 const RegisterForm = ({
   handleSubmit,
   handleChange,
+  handleCategoryChange,
   name,
   username,
   email,
   phone,
   password,
+  interestedCategories,
 }) => {
   const [toggle, setToggle] = useState(false);
   const handleToggle = (e) => {
@@ -85,6 +88,12 @@ const RegisterForm = ({
                 onClick={handleToggle}
               ></i>
             )}
+          </div>
+          <div className='form-group mb-4 col-md-8 mx-auto'>
+            <MultiHierarchicalSelector
+              onSelectionChange={handleCategoryChange}
+              selectedCategories={interestedCategories}
+            />
           </div>
           <div className='mx-auto col-md-8'>
             <Button

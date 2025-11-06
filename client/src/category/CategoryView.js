@@ -470,7 +470,9 @@ const CategoryView = ({ match }) => {
                                       to={`/user/${p.author._id}`}
                                       className='text-decoration-none text-dark1'
                                     >
-                                      {p.author.name}
+                                      {p.author.canSell && p.author.businessName 
+                                        ? p.author.businessName 
+                                        : p.author.name}
                                     </Link>
                                   </small>
                                 </span>
@@ -631,7 +633,9 @@ const CategoryView = ({ match }) => {
                                 to={`/user/${p.author._id}`}
                                 className='text-decoration-none text-dark1'
                               >
-                                {p.author.username}
+                                {p.author.canSell && p.author.businessName 
+                                  ? p.author.businessName 
+                                  : p.author.username}
                               </Link>
                             </small>
                           </div>

@@ -19,6 +19,11 @@ const {
   userPendingProducts,
   userClosedProducts,
   favouriteProducts,
+  submitSellerApplication,
+  getStoresForYou,
+  getPotentialConnections,
+  getConnectedBuyers,
+  createConnection,
 } = require('../controllers/user');
 const {
   getUserNotifications,
@@ -52,5 +57,10 @@ router.post('/user/read-notifications', markNotificationsRead);
 router.post('/user/unread-message', setMsgToUnread);
 router.post('/user/read-message', markMessageRead);
 router.post('/user/products/:userId', userProducts);
+router.post('/user/become-seller/:userId', requireSignin, submitSellerApplication);
+router.get('/for-you/stores/:userId', requireSignin, getStoresForYou);
+router.get('/seller/potential-connections/:sellerId', requireSignin, getPotentialConnections);
+router.get('/seller/connected-buyers/:sellerId', requireSignin, getConnectedBuyers);
+router.post('/seller/create-connection', requireSignin, createConnection);
 
 module.exports = router;

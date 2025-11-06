@@ -208,7 +208,9 @@ const HomeContent = ({ categories }) => {
                                 to={`/user/${p.author._id}`}
                                 className='text-decoration-none text-dark1'
                               >
-                                {p.author.username}
+                                {p.author.canSell && p.author.businessName 
+                                  ? p.author.businessName 
+                                  : p.author.username}
                               </Link>
                             </small>
                           </span>
@@ -371,7 +373,9 @@ const HomeContent = ({ categories }) => {
                             to={`/user/${p.author._id}`}
                             className='text-decoration-none text-dark1'
                           >
-                            {p.author.username}
+                            {p.author.canSell && p.author.businessName 
+                              ? p.author.businessName 
+                              : p.author.username}
                           </Link>
                         </small>
                       </span>

@@ -4,7 +4,7 @@ import moment from 'moment';
 import throttle from 'lodash/throttle';
 import { useHistory } from 'react-router';
 import { isAuthenticated } from '../actions/auth';
-import { getUsers, deleteUser, banUser, unBanUser } from '../actions/admin';
+import { getUsers, deleteUser, banUser, unBanUser, approveSeller, revokeSeller } from '../actions/admin';
 import { Card, Avatar, Tooltip, message, Popconfirm, Pagination } from 'antd';
 
 const { Meta } = Card;
@@ -16,10 +16,11 @@ const ManageUsers = () => {
     pagination: [],
     deleted: false,
     banned: false,
+    sellerUpdated: false,
   });
   const [current, setCurrent] = useState();
   const [search, setSearch] = useState('');
-  const { userList, pagination, deleted, banned } = users;
+  const { userList, pagination, deleted, banned, sellerUpdated } = users;
   const { user, token } = isAuthenticated();
 
   const searchData = useRef(
@@ -40,7 +41,7 @@ const ManageUsers = () => {
     } else {
       searchData.current(search);
     }
-  }, [search, deleted, banned]);
+  }, [search, deleted, banned, sellerUpdated]);
 
   const loadUsers = async (page) => {
     const res = await getUsers();
@@ -92,6 +93,32 @@ const ManageUsers = () => {
     } catch (err) {
       console.log(err);
       if (err.response.status === 400) message.error(err.response.data, 4);
+    }
+  };
+
+  const handleApproveSeller = async (userId) => {
+    try {
+      const adminRole = user.role;
+      const res = await approveSeller(userId, { adminRole }, token);
+      console.log(res);
+      message.success('Seller privileges approved', 4);
+      setUsers({ ...users, sellerUpdated: !sellerUpdated });
+    } catch (err) {
+      console.log(err);
+      if (err.response && err.response.status === 400) message.error(err.response.data, 4);
+    }
+  };
+
+  const handleRevokeSeller = async (userId) => {
+    try {
+      const adminRole = user.role;
+      const res = await revokeSeller(userId, { adminRole }, token);
+      console.log(res);
+      message.success('Seller privileges revoked', 4);
+      setUsers({ ...users, sellerUpdated: !sellerUpdated });
+    } catch (err) {
+      console.log(err);
+      if (err.response && err.response.status === 400) message.error(err.response.data, 4);
     }
   };
 
@@ -204,6 +231,7 @@ const ManageUsers = () => {
                   <tr>
                     <th scope='col'>Name</th>
                     <th scope='col'>Date Joined</th>
+                    <th scope='col'>Seller Status</th>
                     <th scope='col'></th>
                   </tr>
                 </thead>
@@ -222,7 +250,18 @@ const ManageUsers = () => {
                       <td className='text-dark1'>
                         {moment(c.createdAt).format('MMMM Do YYYY, h:mm:ss a')}
                       </td>
-                      <td className='d-flex justify-content-evenly manage-user-btn'>
+                      <td className='text-dark1'>
+                        {c.canSell ? (
+                          <span style={{ color: '#28a745', fontWeight: 'bold' }}>
+                            <i class='fas fa-check-circle'></i> Approved
+                          </span>
+                        ) : (
+                          <span style={{ color: '#dc3545', fontWeight: 'bold' }}>
+                            <i class='fas fa-times-circle'></i> Not Approved
+                          </span>
+                        )}
+                      </td>
+                      <td className='d-flex justify-content-evenly manage-user-btn flex-wrap'>
                         <Link
                           to={`/admin/user/edit/${c._id}`}
                           class='btn btn-info btn-sm text-white'
@@ -257,7 +296,32 @@ const ManageUsers = () => {
                             </Popconfirm>
                           </span>
                         )}
-                        <span class='btn btn-danger btn-sm text-white' style={{ background: '#228B22', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#FFD700'} onMouseLeave={(e) => e.target.style.backgroundColor = '#228B22'}>
+                        {c.canSell ? (
+                          <span class='btn btn-secondary btn-sm text-white' style={{ background: '#6c757d', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease', marginLeft: '5px' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#5a6268'} onMouseLeave={(e) => e.target.style.backgroundColor = '#6c757d'}>
+                            <Popconfirm
+                              placement='top'
+                              title={`Revoke seller privileges for ${c.name}?`}
+                              onConfirm={() => handleRevokeSeller(c._id)}
+                              okText='Yes'
+                              cancelText='No'
+                            >
+                              Revoke Seller
+                            </Popconfirm>
+                          </span>
+                        ) : (
+                          <span class='btn btn-success btn-sm text-white' style={{ background: '#28a745', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease', marginLeft: '5px' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'} onMouseLeave={(e) => e.target.style.backgroundColor = '#28a745'}>
+                            <Popconfirm
+                              placement='top'
+                              title={`Approve ${c.name} as seller?`}
+                              onConfirm={() => handleApproveSeller(c._id)}
+                              okText='Yes'
+                              cancelText='No'
+                            >
+                              Approve Seller
+                            </Popconfirm>
+                          </span>
+                        )}
+                        <span class='btn btn-danger btn-sm text-white' style={{ background: '#dc3545', border: 'none', borderRadius: '4px', transition: 'background-color 0.3s ease', marginLeft: '5px' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'} onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}>
                           <Popconfirm
                             placement='top'
                             title={'Are you sure to delete this user?'}

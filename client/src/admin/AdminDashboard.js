@@ -52,7 +52,7 @@ const AdminDashboard = () => {
 
   const loadOrders = async () => {
     try {
-      const res = await getAllOrders();
+      const res = await getAllOrders(token);
       setOrders(res.data);
     } catch (err) {
       console.log(err);

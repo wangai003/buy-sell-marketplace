@@ -28,12 +28,20 @@ const EditProduct = ({ match }) => {
   const { user, token } = isAuthenticated();
   const { name, category, location, description, condition, price, author } =
     values;
+  const history = useHistory();
 
   useEffect(() => {
+    // Check if user has seller permission
+    if (user && !user.canSell) {
+      message.error('You do not have permission to edit products. Please contact an administrator to request seller privileges.', 6);
+      history.push('/user/dashboard');
+      return;
+    }
     loadCategories();
     loadLocations();
     loadProduct();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const loadCategories = async () => {
     let res = await allCategories();
@@ -81,8 +89,6 @@ const EditProduct = ({ match }) => {
       });
     }
   };
-
-  const history = useHistory();
 
   const handleSubmit = async (e) => {
     e.preventDefault();

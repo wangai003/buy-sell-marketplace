@@ -159,7 +159,9 @@ const RelatedProducts = ({ category }) => {
                           className='text-decoration-none'
                           style={{ color: '#33b27b' }}
                         >
-                          {p.author.name}
+                          {p.author.canSell && p.author.businessName 
+                            ? p.author.businessName 
+                            : p.author.name}
                         </Link>
                       </small>
                     </span>

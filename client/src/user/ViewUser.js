@@ -25,6 +25,12 @@ const ViewUser = ({ match, history }) => {
     followers: '',
     products: [],
     createdAt: '',
+    canSell: false,
+    businessName: '',
+    businessLogo: '',
+    businessPhone: '',
+    socialMediaLinks: {},
+    sellerCategories: [],
   });
   const [activeProducts, setActiveProducts] = useState([]);
   const [following, setFollowing] = useState(null);
@@ -45,8 +51,21 @@ const ViewUser = ({ match, history }) => {
     location,
     products,
     createdAt,
+    canSell,
+    businessName,
+    businessLogo,
+    businessPhone,
+    socialMediaLinks,
+    sellerCategories,
   } = values;
   const { user, token } = isAuthenticated();
+
+  // Determine display values based on seller status
+  const isSeller = canSell;
+  const displayLogo = isSeller && businessLogo ? businessLogo : photo;
+  const displayName = isSeller && businessName ? businessName : name;
+  const displayPhone = isSeller && businessPhone ? businessPhone : phone;
+  const displayUsername = username;
 
   const loadUser = async () => {
     let res = await viewUser(match.params.userId);
@@ -161,20 +180,31 @@ const ViewUser = ({ match, history }) => {
             style={{ width: 'auto', ...styles.card }}
             cover={
               <Avatar
-                src={photo}
+                src={displayLogo}
                 className='mx-auto mt-3 avatar-user'
                 size={130}
+                style={isSeller && businessLogo ? { border: '3px solid #FFD700' } : {}}
               >
-                {name[0]}
+                {displayName[0]}
               </Avatar>
             }
           >
             <div className='text-center'>
-              <h5 style={styles.text}>({username})</h5>
+              {isSeller ? (
+                <div>
+                  <h5 style={{ color: '#228B22', fontWeight: 'bold' }}>
+                    <i className='fas fa-store me-2'></i>
+                    {displayName}
+                  </h5>
+                  <small style={{ color: '#666' }}>({displayUsername})</small>
+                </div>
+              ) : (
+                <h5 style={styles.text}>({displayUsername})</h5>
+              )}
             </div>
             <Meta
-              title={name}
-              description={phone}
+              title={isSeller ? 'Business' : displayName}
+              description={displayPhone}
               className='text-center user-details'
             />
             {user._id !== _id && (
@@ -221,7 +251,7 @@ const ViewUser = ({ match, history }) => {
                     {moment(createdAt).fromNow()}
                   </span>
                 </div>
-                {location && location !== 'undefined' && (
+                {!isSeller && location && location !== 'undefined' && (
                   <div className='text-center mt-2 bg-light' style={{...styles.card, border: '1px solid #FFD700'}}>
                     <h6
                       className='p-1'
@@ -230,6 +260,99 @@ const ViewUser = ({ match, history }) => {
                       <i class='fas fa-map-marker-alt me-2'></i>
                       {location} State
                     </h6>
+                  </div>
+                )}
+                {isSeller && socialMediaLinks && Object.keys(socialMediaLinks).length > 0 && (
+                  <div className='text-center mt-2 bg-light' style={{...styles.card, border: '1px solid #FFD700', padding: '10px'}}>
+                    <h6 style={{ color: '#228B22', marginBottom: '8px' }}>
+                      <i className='fas fa-share-alt me-2'></i>Social Media
+                    </h6>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      {socialMediaLinks.facebook && (
+                        <a
+                          href={socialMediaLinks.facebook}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          style={{ fontSize: '20px', color: '#1877F2' }}
+                          title='Facebook'
+                        >
+                          <i className='fab fa-facebook'></i>
+                        </a>
+                      )}
+                      {socialMediaLinks.instagram && (
+                        <a
+                          href={socialMediaLinks.instagram}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          style={{ fontSize: '20px', color: '#E4405F' }}
+                          title='Instagram'
+                        >
+                          <i className='fab fa-instagram'></i>
+                        </a>
+                      )}
+                      {socialMediaLinks.twitter && (
+                        <a
+                          href={socialMediaLinks.twitter}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          style={{ fontSize: '20px', color: '#1DA1F2' }}
+                          title='Twitter'
+                        >
+                          <i className='fab fa-twitter'></i>
+                        </a>
+                      )}
+                      {socialMediaLinks.linkedin && (
+                        <a
+                          href={socialMediaLinks.linkedin}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          style={{ fontSize: '20px', color: '#0077B5' }}
+                          title='LinkedIn'
+                        >
+                          <i className='fab fa-linkedin'></i>
+                        </a>
+                      )}
+                      {socialMediaLinks.website && (
+                        <a
+                          href={socialMediaLinks.website}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          style={{ fontSize: '20px', color: '#333' }}
+                          title='Website'
+                        >
+                          <i className='fas fa-globe'></i>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {isSeller && sellerCategories && sellerCategories.length > 0 && (
+                  <div className='text-center mt-2 bg-light' style={{...styles.card, border: '1px solid #FFD700', padding: '10px'}}>
+                    <h6 style={{ color: '#228B22', marginBottom: '8px' }}>
+                      <i className='fas fa-tags me-2'></i>Business Categories ({sellerCategories.length})
+                    </h6>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', justifyContent: 'center' }}>
+                      {sellerCategories.slice(0, 5).map((cat, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            fontSize: '11px',
+                            padding: '4px 8px',
+                            background: '#FFD700',
+                            color: '#228B22',
+                            borderRadius: '4px',
+                            fontWeight: '500'
+                          }}
+                        >
+                          {cat.name || cat}
+                        </span>
+                      ))}
+                      {sellerCategories.length > 5 && (
+                        <span style={{ fontSize: '11px', color: '#666', padding: '4px 8px' }}>
+                          +{sellerCategories.length - 5} more
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
                 <div className='row'>
@@ -285,7 +408,9 @@ const ViewUser = ({ match, history }) => {
         <div className='col-md-9'>
           <div className='card rounded-0 profile-card card-shadow' style={styles.card}>
             <div className='card-header profile-card p-3' style={{...styles.card, borderBottom: '1px solid #FFD700'}}>
-              <h3 style={styles.title}>{username}'s Products</h3>
+              <h3 style={styles.title}>
+                {isSeller && businessName ? `${businessName}'s Products` : `${username}'s Products`}
+              </h3>
             </div>
             {activeProducts.length === 0 && (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
