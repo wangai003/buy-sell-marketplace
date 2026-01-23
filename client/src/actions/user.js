@@ -133,6 +133,17 @@ export const getConnectedBuyers = async (sellerId, token) =>
     },
   });
 
+export const getConnectionsSubscriptionStatus = async (sellerId, token) =>
+  await axios.get(`${process.env.REACT_APP_API}/seller/subscription-status/${sellerId}`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+export const getSubscriptionTiers = async () =>
+  await axios.get(`${process.env.REACT_APP_API}/seller/subscription-tiers`);
+
 export const createConnection = async (sellerId, buyerId, token) =>
   await axios.post(
     `${process.env.REACT_APP_API}/seller/create-connection`,

@@ -8,7 +8,8 @@ const CurrencySelector = () => {
   const dispatch = useDispatch();
   const { selectedCurrency } = useSelector((state) => state.buynsellCurrency);
 
-  const currencies = ['USDC', 'EURC', 'XLM', 'AKOFA'];
+  // Only USDC and USDT on Polygon are supported
+  const currencies = ['USDC', 'USDT'];
 
   const handleCurrencyChange = (value) => {
     dispatch({
@@ -20,7 +21,7 @@ const CurrencySelector = () => {
 
   return (
     <Select
-      value={selectedCurrency}
+      value={selectedCurrency || 'USDC'}
       onChange={handleCurrencyChange}
       style={{ width: '120px', marginLeft: '16px' }}
       bordered={false}

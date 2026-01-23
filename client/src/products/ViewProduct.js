@@ -22,9 +22,11 @@ import RelatedProducts from './RelatedProducts';
 import { useDispatch, useSelector } from 'react-redux';
 import QRCode from 'react-qr-code';
 import { fetchConvertedPrice } from '../actions/currency';
+import DirectWalletPaymentModal from "../components/SimplePaymentModal";
 
 const { Option } = Select;
 const { Meta } = Card;
+
 
 const ViewProduct = ({ match, history }) => {
   const dispatch = useDispatch();
@@ -45,8 +47,8 @@ const ViewProduct = ({ match, history }) => {
   const [widgetAddress, setWidgetAddress] = useState('');
   const [widgetAmount, setWidgetAmount] = useState('');
   const [widgetCurrency, setWidgetCurrency] = useState('');
-  const [payCurrency, setPayCurrency] = useState('XLM'); // default: XLM
-  const [currencies, setCurrencies] = useState(['XLM', 'USDC', 'EURC', 'AKOFA']);
+  const [payCurrency, setPayCurrency] = useState('USDC'); // default: USDC
+  const [currencies, setCurrencies] = useState(['USDC', 'USDT']);
   const [stellarPay, setStellarPay] = useState(null);
   const [paying, setPaying] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
@@ -69,7 +71,7 @@ const ViewProduct = ({ match, history }) => {
   }, [favourite, reported, match.params.productId]);
 
   useEffect(() => {
-    const symbol = selectedCurrency === 'USDC' ? 'USDC' : selectedCurrency;
+    const symbol = selectedCurrency === 'USDT' ? 'USDT' : 'USDC';
     setCurrencySymbol(symbol);
   }, [selectedCurrency]);
 
@@ -82,11 +84,12 @@ const ViewProduct = ({ match, history }) => {
   const fetchConvertedPrices = async () => {
     if (!product.price) return;
     try {
+      // USDC and USDT are both pegged to USD, so no conversion needed
       const prices = {};
       const priceFields = ['price', 'startingBid', 'currentBid'];
       for (const field of priceFields) {
         if (product[field]) {
-          prices[field] = await fetchConvertedPrice(product[field], 'USDC', selectedCurrency);
+          prices[field] = product[field]; // Same value for USDC/USDT
         }
       }
       setConvertedPrices(prices);
@@ -118,8 +121,8 @@ const ViewProduct = ({ match, history }) => {
   }, [product.endTime]);
 
   const loadCurrencies = async () => {
-    // Use fixed currencies for Stellar payments
-    setCurrencies(['XLM', 'USDC', 'EURC', 'AKOFA']);
+    // Only USDC and USDT on Polygon are supported
+    setCurrencies(['USDC', 'USDT']);
   };
 
   const loadUser = async () => {
@@ -201,11 +204,13 @@ const ViewProduct = ({ match, history }) => {
     setFavourite(!favourite);
   };
 
-  const handlePayWithStellar = async () => {
+  const [paymentDetails, setPaymentDetails] = useState(null);
+
+  const handlePayWithWallet = async () => {
     setPaying(true);
     try {
       const { token } = isAuthenticated();
-      const res = await fetch(`${process.env.REACT_APP_API}/payment/stellar`, {
+      const res = await fetch(`${process.env.REACT_APP_API}/payment/external-wallet`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -216,22 +221,25 @@ const ViewProduct = ({ match, history }) => {
           buyerId: user._id,
           sellerId: productAuthor._id,
           quantity: isGoodsCategory ? quantity : 1,
-          currency: selectedCurrency
+          currency: selectedCurrency || 'USDC'
         }),
       });
       const data = await res.json();
-      setStellarPay({
-        ...data,
-        currency: selectedCurrency,
-      });
-      setPaymentStatus('AWAITING_PAYMENT');
-      // Optionally start polling
-      pollStellarPaymentStatus(data.orderId);
+      if (res.ok) {
+        setPaymentDetails(data);
+        setShowWidget(true);
+        setPaymentStatus('AWAITING_PAYMENT');
+      } else {
+        message.error(data.error || 'Failed to initiate payment');
+        setPaymentStatus('FAILED');
+      }
     } catch(e){
+      message.error('Failed to initiate payment');
       setPaymentStatus('FAILED');
     }
     setPaying(false);
   };
+
 
   const handleCurrencyChange = (value) => {
     dispatch({
@@ -239,22 +247,6 @@ const ViewProduct = ({ match, history }) => {
       payload: value,
     });
     localStorage.setItem('selectedCurrency', value);
-  };
-
-  const pollStellarPaymentStatus = (orderId) => {
-    const poll = setInterval(async () => {
-      const { token } = isAuthenticated();
-      const res = await fetch(`${process.env.REACT_APP_API}/orders/${orderId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      if(data.status === 'PAID'){
-        setPaymentStatus('PAID');
-        clearInterval(poll);
-      }
-    }, 5000);
   };
 
   //format currency
@@ -615,7 +607,7 @@ const ViewProduct = ({ match, history }) => {
                       </div>
                       <div className='mt-2 text-center'>
                         <small className='text-muted'>
-                          Total: {selectedCurrency === 'USDC' ? 'USDC' : selectedCurrency}{(parseInt(convertedPrices.price || product.price) * quantity).format()}
+                          Total: {selectedCurrency || 'USDC'} {(parseInt(convertedPrices.price || product.price) * quantity).format()}
                         </small>
                       </div>
                     </div>
@@ -652,19 +644,17 @@ const ViewProduct = ({ match, history }) => {
                       <div className='mb-3'>
                         <label className='form-label'>Select Payment Currency:</label>
                         <Select
-                          value={selectedCurrency}
+                          value={selectedCurrency || 'USDC'}
                           onChange={handleCurrencyChange}
                           style={{ width: '100%' }}
                           placeholder="Select currency"
                         >
-                          <Select.Option value="USDC">USDC</Select.Option>
-                          <Select.Option value="EURC">EURC</Select.Option>
-                          <Select.Option value="XLM">XLM</Select.Option>
-                          <Select.Option value="AKOFA">AKOFA</Select.Option>
+                          <Select.Option value="USDC">USDC (Polygon)</Select.Option>
+                          <Select.Option value="USDT">USDT (Polygon)</Select.Option>
                         </Select>
                       </div>
-                      <Button type='primary' onClick={handlePayWithStellar} disabled={paying || paymentStatus === 'AWAITING_PAYMENT'}>
-                        Pay with Stellar {isGoodsCategory && `(${quantity}x)`}
+                      <Button type='primary' onClick={handlePayWithWallet} disabled={paying || paymentStatus === 'AWAITING_PAYMENT'}>
+                        Pay in External Wallet {isGoodsCategory && `(${quantity}x)`}
                       </Button>
                       {paymentStatus === 'AWAITING_PAYMENT' && (
                         <div className='mt-2'>
@@ -782,45 +772,23 @@ const ViewProduct = ({ match, history }) => {
           </div>
         )}
       </div>
-      <Modal
+      <DirectWalletPaymentModal
         visible={showWidget}
-        open={showWidget}
-        onCancel={() => setShowWidget(false)}
-        footer={null}
-        title='Complete your payment'
-        width={720}
-      >
-        {invoiceUrl && (
-          <iframe
-            src={invoiceUrl}
-            title='NOWPayments Invoice'
-            style={{ width: '100%', height: '70vh', border: 'none' }}
-            allowFullScreen
-            onError={() => {
-              window.open(invoiceUrl, '_blank');
-              setShowWidget(false);
-            }}
-          />
-        )}
-        {invoiceUrl && (
-          <div className='mt-2'>
-            <a href={invoiceUrl} target='_blank' rel='noreferrer'>Open invoice in a new tab</a>
-          </div>
-        )}
-        {!invoiceUrl && (widgetAddress || widgetAmount) && (
-          <div>
-            <div className='mb-2'><strong>Send {widgetAmount || '—'} {widgetCurrency.toUpperCase()} to:</strong></div>
-            <div style={{ wordBreak: 'break-all' }} className='mb-2'>{widgetAddress || 'Address will appear shortly.'}</div>
-            <div className='d-flex'>
-              <Button size='small' onClick={() => navigator.clipboard.writeText(widgetAddress)}>Copy Address</Button>
-              <Button size='small' className='ms-2' onClick={() => navigator.clipboard.writeText(widgetAmount)}>Copy Amount</Button>
-            </div>
-            <div className='mt-3 text-muted' style={{ fontSize: 12 }}>
-              After sending, the payment status will update automatically.
-            </div>
-          </div>
-        )}
-      </Modal>
+        onCancel={() => {
+          setShowWidget(false);
+          setPaymentDetails(null);
+        }}
+        paymentDetails={paymentDetails}
+        onPaymentSuccess={() => {
+          setShowWidget(false);
+          setPaymentDetails(null);
+          setPaymentStatus('PAID');
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }}
+        orderType="regular"
+      />
     </>
   );
 };

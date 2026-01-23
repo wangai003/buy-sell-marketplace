@@ -7,6 +7,7 @@ import { Empty, Pagination, Tooltip } from 'antd';
 import FavNotification from './FavNotification';
 import RatingNotification from './RatingNotification';
 import FollowNotification from './FollowNotification';
+import SubscriptionRequiredNotification from './SubscriptionRequiredNotification';
 
 const UserNotifications = () => {
   const countPerPage = 10;
@@ -89,6 +90,12 @@ const UserNotifications = () => {
                         <RatingNotification
                           key={notification._id}
                           user={user}
+                          notification={notification}
+                        />
+                      )}
+                      {notification.type === 'subscriptionRequired' && (
+                        <SubscriptionRequiredNotification
+                          key={notification._id}
                           notification={notification}
                         />
                       )}

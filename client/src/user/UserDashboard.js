@@ -9,8 +9,10 @@ import { getBuyerOrders, getSellerOrders, updateOrderStatus } from '../actions/o
 import { Card, Empty, Pagination, message, Popconfirm, Button, Table, Tag, Modal, Input, DatePicker } from 'antd';
 import io from 'socket.io-client';
 import { useSelector } from 'react-redux';
+import DirectWalletPaymentModal from "../components/SimplePaymentModal";
 
 const { Meta } = Card;
+
 
 const UserDashboard = () => {
   const { user, token } = isAuthenticated();
@@ -72,7 +74,6 @@ const UserDashboard = () => {
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [paymentOrder, setPaymentOrder] = useState(null);
   const [paymentDetails, setPaymentDetails] = useState(null);
-  const [paymentStatus, setPaymentStatus] = useState(null);
   const { selectedCurrency } = useSelector((state) => state.buynsellCurrency || { selectedCurrency: 'XLM' });
 
   const { _id, products, followers, following, favourites, wallet, sellerCategories } = values;
@@ -197,9 +198,8 @@ const UserDashboard = () => {
     try {
       setPaymentOrder(order);
       setPaymentModalVisible(true);
-      setPaymentStatus('loading');
 
-      const res = await fetch(`${process.env.REACT_APP_API}/payment/stellar`, {
+      const res = await fetch(`${process.env.REACT_APP_API}/payment/external-wallet`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ const UserDashboard = () => {
           buyerId: user._id,
           sellerId: order.sellerId?._id || order.sellerId,
           quantity: order.quantity || 1,
-          currency: selectedCurrency
+          currency: selectedCurrency || 'USDC'
         }),
       });
 
@@ -218,43 +218,15 @@ const UserDashboard = () => {
       
       if (res.ok) {
         setPaymentDetails(data);
-        setPaymentStatus('ready');
-        // Start polling for payment status
-        pollPaymentStatus(data.orderId);
       } else {
         message.error(data.error || 'Failed to initiate payment');
-        setPaymentStatus('error');
+        setPaymentModalVisible(false);
       }
     } catch (error) {
       console.error('Payment error:', error);
       message.error('Failed to initiate payment');
-      setPaymentStatus('error');
+      setPaymentModalVisible(false);
     }
-  };
-
-  const pollPaymentStatus = (orderId) => {
-    const poll = setInterval(async () => {
-      try {
-        const res = await fetch(`${process.env.REACT_APP_API}/orders/${orderId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await res.json();
-        if (data.status === 'PAID' || data.order?.status === 'PAID') {
-          setPaymentStatus('paid');
-          message.success('Payment confirmed!');
-          clearInterval(poll);
-          setPaymentModalVisible(false);
-          loadOrders(); // Reload orders
-        }
-      } catch (error) {
-        console.error('Error polling payment status:', error);
-      }
-    }, 5000);
-
-    // Stop polling after 5 minutes
-    setTimeout(() => clearInterval(poll), 300000);
   };
 
   const handleMarkDelivering = async () => {
@@ -1175,91 +1147,22 @@ const UserDashboard = () => {
           </Modal>
 
           {/* Payment Modal */}
-          <Modal
-            title={paymentOrder?.orderType === 'auction' ? 'Pay for Auction Order' : 'Complete Payment'}
-            open={paymentModalVisible}
+          <DirectWalletPaymentModal
+            visible={paymentModalVisible}
             onCancel={() => {
               setPaymentModalVisible(false);
               setPaymentOrder(null);
               setPaymentDetails(null);
-              setPaymentStatus(null);
             }}
-            footer={null}
-            width={720}
-          >
-            {paymentStatus === 'loading' && (
-              <div className="text-center p-5">
-                <i className="fas fa-spinner fa-spin fa-3x" style={{ color: '#FFD700' }}></i>
-                <p style={{ marginTop: '15px', color: '#666' }}>Preparing payment...</p>
-              </div>
-            )}
-
-            {paymentStatus === 'error' && (
-              <div className="text-center p-5">
-                <i className="fas fa-exclamation-circle fa-3x" style={{ color: '#dc3545' }}></i>
-                <p style={{ marginTop: '15px', color: '#666' }}>Failed to initiate payment. Please try again.</p>
-              </div>
-            )}
-
-            {paymentStatus === 'ready' && paymentDetails && (
-              <div>
-                {paymentOrder?.orderType === 'auction' && (
-                  <div className="alert alert-info mb-3">
-                    <i className="fas fa-trophy me-2"></i>
-                    <strong>Congratulations!</strong> You won this auction. Please complete payment to receive your item.
-                  </div>
-                )}
-                <div className="mb-3">
-                  <strong>Order ID:</strong> {paymentDetails.orderId || paymentOrder?._id}
-                </div>
-                <div className="mb-3">
-                  <strong>Amount:</strong> {paymentDetails.amount || paymentOrder?.displayPrice} {paymentDetails.currency || paymentOrder?.displayCurrency || 'XLM'}
-                </div>
-                {paymentDetails.address && (
-                  <div className="mb-3">
-                    <div className="mb-2"><strong>Send {paymentDetails.amount || paymentOrder?.displayPrice} {paymentDetails.currency || paymentOrder?.displayCurrency || 'XLM'} to:</strong></div>
-                    <div style={{ wordBreak: 'break-all', background: '#f5f5f5', padding: '10px', borderRadius: '5px', marginBottom: '10px' }}>
-                      {paymentDetails.address}
-                    </div>
-                    <div className="d-flex gap-2">
-                      <Button size="small" onClick={() => navigator.clipboard.writeText(paymentDetails.address)}>
-                        Copy Address
-                      </Button>
-                      <Button size="small" onClick={() => navigator.clipboard.writeText(paymentDetails.amount || paymentOrder?.displayPrice)}>
-                        Copy Amount
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                {paymentDetails.memo && (
-                  <div className="mb-3">
-                    <div className="mb-2"><strong>Memo:</strong></div>
-                    <div style={{ wordBreak: 'break-all', background: '#f5f5f5', padding: '10px', borderRadius: '5px' }}>
-                      {paymentDetails.memo}
-                    </div>
-                  </div>
-                )}
-                {paymentDetails.sep7 && (
-                  <div className="mb-3">
-                    <a href={paymentDetails.sep7} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-                      <i className="fas fa-wallet me-2"></i>
-                      Open in Stellar Wallet
-                    </a>
-                  </div>
-                )}
-                <div className="mt-3 text-muted" style={{ fontSize: '12px' }}>
-                  After sending, the payment status will update automatically. This may take a few minutes.
-                </div>
-              </div>
-            )}
-
-            {paymentStatus === 'paid' && (
-              <div className="text-center p-5">
-                <i className="fas fa-check-circle fa-3x" style={{ color: '#28a745' }}></i>
-                <p style={{ marginTop: '15px', color: '#666' }}>Payment confirmed! Your order is being processed.</p>
-              </div>
-            )}
-          </Modal>
+            paymentDetails={paymentDetails}
+            onPaymentSuccess={() => {
+                        setPaymentModalVisible(false);
+                        setPaymentOrder(null);
+                        setPaymentDetails(null);
+                        loadOrders(); // Reload orders
+                      }}
+            orderType={paymentOrder?.orderType}
+                    />
         </div>
       </div>
     </>

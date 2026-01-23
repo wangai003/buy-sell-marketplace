@@ -47,7 +47,6 @@ import AllProductsPage from './components/AllProducts';
 import ManageAdvertisements from './admin/ManageAdvertisements';
 import UserNotifications from './notifications/UserNotifications';
 import ChatList from './messages/ChatList';
-import Chat from './messages/Chat';
 import TermsAndConditions from './components/TermsAndConditions';
 import BecomeSeller from './user/BecomeSeller';
 import ForYou from './user/ForYou';
@@ -83,7 +82,6 @@ function App() {
           component={UserNotifications}
         />
         <PrivateRoute exact path='/messages' component={ChatList} />
-        <PrivateRoute exact path='/user/message/:chatId' component={Chat} />
         <PrivateRoute exact path='/user/business' component={BusinessInfo} />
         <PrivateRoute exact path='/user/follow-list' component={FollowList} />
         <PrivateRoute exact path='/user/favourites' component={Favourites} />

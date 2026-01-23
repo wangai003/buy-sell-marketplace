@@ -1,0 +1,12 @@
+import { QueryClient } from "@tanstack/react-query";
+
+// Singleton QueryClient instance - used globally and in modals
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+

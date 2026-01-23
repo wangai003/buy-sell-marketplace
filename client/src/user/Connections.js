@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { isAuthenticated } from '../actions/auth';
 import {
   getPotentialConnections,
   getConnectedBuyers,
   createConnection,
+  getConnectionsSubscriptionStatus,
+  getSubscriptionTiers,
 } from '../actions/user';
 import {
   Tabs,
@@ -16,6 +18,7 @@ import {
   message,
   Pagination,
   Space,
+  Alert,
 } from 'antd';
 import {
   UserAddOutlined,
@@ -23,6 +26,8 @@ import {
   ShopOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import SimplePaymentModal from '../components/SimplePaymentModal';
+import SubscriptionTierModal from '../components/SubscriptionTierModal';
 
 const Connections = () => {
   const { user, token } = isAuthenticated();
@@ -34,7 +39,97 @@ const Connections = () => {
   const [activeTab, setActiveTab] = useState('potential');
   const [currentPage, setCurrentPage] = useState(1);
   const [currentConnectedPage, setCurrentConnectedPage] = useState(1);
+  const [subscriptionStatus, setSubscriptionStatus] = useState({
+    isActive: false,
+    activeUntil: null,
+    tier: 'FREE',
+    billingCycle: 'monthly',
+    tierConfig: {},
+    usage: {},
+  });
+  const [subscriptionRequired, setSubscriptionRequired] = useState(false);
+  const [subscriptionPaymentVisible, setSubscriptionPaymentVisible] = useState(false);
+  const [subscriptionPaymentDetails, setSubscriptionPaymentDetails] = useState(null);
+  const [tierSelectionVisible, setTierSelectionVisible] = useState(false);
   const countPerPage = 12;
+  
+  // Refs to prevent duplicate calls and error flooding
+  const hasLoadedRef = useRef(false);
+  const isLoadingRef = useRef(false);
+  const errorShownRef = useRef(false);
+  const errorTimeoutRef = useRef(null);
+  
+  // Helper to show error only once per period
+  const showErrorOnce = (errorMessage, duration = 5000) => {
+    if (!errorShownRef.current) {
+      errorShownRef.current = true;
+      message.error(errorMessage);
+      // Reset error flag after duration
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+      errorTimeoutRef.current = setTimeout(() => {
+        errorShownRef.current = false;
+      }, duration);
+    }
+  };
+
+  const loadSubscriptionStatus = useCallback(async () => {
+    if (!user || !token) return;
+    try {
+      const res = await getConnectionsSubscriptionStatus(user._id, token);
+      setSubscriptionStatus(res.data);
+      setSubscriptionRequired(!res.data?.isActive);
+    } catch (err) {
+      console.error('Error loading subscription status:', err);
+      // Don't show error - just log it
+    }
+  }, [user?._id, token]);
+
+  const loadPotentialConnections = useCallback(async () => {
+    if (!user || !token || isLoadingRef.current) return;
+    isLoadingRef.current = true;
+    setLoadingPotential(true);
+    try {
+      const res = await getPotentialConnections(user._id, token);
+      setPotentialBuyers(res.data || []);
+      setSubscriptionRequired(false);
+      errorShownRef.current = false; // Reset error flag on success
+    } catch (err) {
+      if (err?.response?.status === 402) {
+        setSubscriptionRequired(true);
+        setPotentialBuyers([]);
+        setSubscriptionStatus((prev) => ({
+          ...prev,
+          activeUntil: err.response?.data?.activeUntil || null,
+          isActive: false,
+        }));
+        errorShownRef.current = false; // Don't count 402 as an error
+      } else {
+        console.error('Error loading potential connections:', err);
+        // Only show error once
+        showErrorOnce('Failed to load potential connections');
+      }
+    } finally {
+      setLoadingPotential(false);
+      isLoadingRef.current = false;
+    }
+  }, [user?._id, token]);
+
+  const loadConnectedBuyers = useCallback(async () => {
+    if (!user || !token) return;
+    setLoadingConnected(true);
+    try {
+      const res = await getConnectedBuyers(user._id, token);
+      setConnectedBuyers(res.data || []);
+    } catch (err) {
+      console.error('Error loading connected buyers:', err);
+      // Only show error once
+      showErrorOnce('Failed to load connected buyers');
+    } finally {
+      setLoadingConnected(false);
+    }
+  }, [user?._id, token]);
 
   useEffect(() => {
     if (!user || !token) {
@@ -49,49 +144,95 @@ const Connections = () => {
       return;
     }
 
-    loadPotentialConnections();
-    loadConnectedBuyers();
-  }, [user, token]);
-
-  const loadPotentialConnections = async () => {
-    if (!user || !token) return;
-    setLoadingPotential(true);
-    try {
-      const res = await getPotentialConnections(user._id, token);
-      setPotentialBuyers(res.data || []);
-    } catch (err) {
-      console.error('Error loading potential connections:', err);
-      message.error('Failed to load potential connections');
-    } finally {
-      setLoadingPotential(false);
+    // Only load once when component mounts or user._id changes
+    const userId = user?._id;
+    if (userId && (!hasLoadedRef.current || hasLoadedRef.current !== userId)) {
+      hasLoadedRef.current = userId;
+      errorShownRef.current = false;
+      isLoadingRef.current = false;
+      loadSubscriptionStatus();
+      loadPotentialConnections();
+      loadConnectedBuyers();
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id, token]); // Only depend on user._id and token, not the functions
 
-  const loadConnectedBuyers = async () => {
-    if (!user || !token) return;
-    setLoadingConnected(true);
-    try {
-      const res = await getConnectedBuyers(user._id, token);
-      setConnectedBuyers(res.data || []);
-    } catch (err) {
-      console.error('Error loading connected buyers:', err);
-      message.error('Failed to load connected buyers');
-    } finally {
-      setLoadingConnected(false);
-    }
-  };
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleConnect = async (buyerId) => {
     try {
       await createConnection(user._id, buyerId, token);
       message.success('Connection created successfully!');
       // Reload both lists
+      errorShownRef.current = false; // Reset error flag
       loadPotentialConnections();
       loadConnectedBuyers();
     } catch (err) {
-      console.error('Error creating connection:', err);
-      message.error('Failed to create connection. Please try again.');
+      if (err?.response?.status === 402) {
+        setSubscriptionRequired(true);
+        message.warning('Subscription required to connect with buyers.');
+        loadSubscriptionStatus();
+      } else {
+        console.error('Error creating connection:', err);
+        // Only show error once
+        showErrorOnce('Failed to create connection. Please try again.');
+      }
     }
+  };
+
+  const handleStartSubscription = () => {
+    setTierSelectionVisible(true);
+  };
+
+  const handleTierSelected = async (tier, billingCycle, tierConfig) => {
+    setTierSelectionVisible(false);
+    if (!user || !token) return;
+    
+    try {
+      setSubscriptionPaymentVisible(true);
+      const selectedCurrency = localStorage.getItem('selectedCurrency') || 'USDC';
+      const res = await fetch(`${process.env.REACT_APP_API}/payment/subscription/external-wallet`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          sellerId: user._id,
+          tier,
+          billingCycle,
+          currency: selectedCurrency,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSubscriptionPaymentDetails(data);
+      } else {
+        // Only show error once
+        showErrorOnce(data.error || 'Failed to initiate subscription payment');
+        setSubscriptionPaymentVisible(false);
+      }
+    } catch (error) {
+      console.error('Subscription payment error:', error);
+      // Only show error once
+      showErrorOnce('Failed to initiate subscription payment');
+      setSubscriptionPaymentVisible(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setSubscriptionPaymentVisible(false);
+    setSubscriptionPaymentDetails(null);
+    loadSubscriptionStatus();
+    loadPotentialConnections();
+    message.success('Subscription activated successfully!');
   };
 
   const handleOpenChat = (buyerId) => {
@@ -145,6 +286,58 @@ const Connections = () => {
           </div>
 
           <div className="card-body p-4">
+            {subscriptionRequired && (
+              <Alert
+                type="warning"
+                showIcon
+                message="Subscription required"
+                description={
+                  subscriptionStatus.activeUntil
+                    ? `Your access expired on ${new Date(subscriptionStatus.activeUntil).toLocaleDateString()}. Renew to view potential buyers.`
+                    : 'Subscribe to view potential buyers that match your categories.'
+                }
+                action={
+                  <Button type="primary" onClick={handleStartSubscription}>
+                    Subscribe
+                  </Button>
+                }
+                style={{ marginBottom: 16 }}
+              />
+            )}
+            {subscriptionStatus.isActive && subscriptionStatus.usage && (
+              <Alert
+                type="info"
+                showIcon
+                message={
+                  <Space>
+                    <span>
+                      {subscriptionStatus.tierConfig?.name || subscriptionStatus.tier} Plan
+                      {subscriptionStatus.tierConfig?.badge && (
+                        <Tag color="gold" style={{ marginLeft: 8 }}>
+                          {subscriptionStatus.tierConfig.badge}
+                        </Tag>
+                      )}
+                    </span>
+                    {subscriptionStatus.usage.connectionsLimit !== -1 && (
+                      <span>
+                        Connections: {subscriptionStatus.usage.connectionsUsed || 0} / {subscriptionStatus.usage.connectionsLimit}
+                      </span>
+                    )}
+                  </Space>
+                }
+                description={
+                  subscriptionStatus.activeUntil
+                    ? `Active until ${new Date(subscriptionStatus.activeUntil).toLocaleDateString()}`
+                    : 'Active subscription'
+                }
+                action={
+                  <Button onClick={handleStartSubscription}>
+                    Upgrade/Change Plan
+                  </Button>
+                }
+                style={{ marginBottom: 16 }}
+              />
+            )}
             <Tabs
               activeKey={activeTab}
               onChange={setActiveTab}
@@ -501,6 +694,19 @@ const Connections = () => {
                   ),
                 },
               ]}
+            />
+            <SubscriptionTierModal
+              visible={tierSelectionVisible}
+              onCancel={() => setTierSelectionVisible(false)}
+              onSelectTier={handleTierSelected}
+              currentTier={subscriptionStatus.tier}
+            />
+            <SimplePaymentModal
+              visible={subscriptionPaymentVisible}
+              onCancel={() => setSubscriptionPaymentVisible(false)}
+              paymentDetails={subscriptionPaymentDetails}
+              orderType="subscription"
+              onPaymentSuccess={handlePaymentSuccess}
             />
           </div>
         </div>
