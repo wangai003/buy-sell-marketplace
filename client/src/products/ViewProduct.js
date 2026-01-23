@@ -23,6 +23,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import QRCode from 'react-qr-code';
 import { fetchConvertedPrice } from '../actions/currency';
 import DirectWalletPaymentModal from "../components/SimplePaymentModal";
+import { convertPriceToCurrency, getCurrencySymbol } from '../utils/currency';
 
 const { Option } = Select;
 const { Meta } = Card;
@@ -70,8 +71,9 @@ const ViewProduct = ({ match, history }) => {
     loadBids();
   }, [favourite, reported, match.params.productId]);
 
+
   useEffect(() => {
-    const symbol = selectedCurrency === 'USDT' ? 'USDT' : 'USDC';
+    const symbol = selectedCurrency || 'USDC';
     setCurrencySymbol(symbol);
   }, [selectedCurrency]);
 
@@ -84,12 +86,15 @@ const ViewProduct = ({ match, history }) => {
   const fetchConvertedPrices = async () => {
     if (!product.price) return;
     try {
-      // USDC and USDT are both pegged to USD, so no conversion needed
+      const currency = selectedCurrency || 'USDC';
+      
+      // Convert from USD to selected currency
+      // Product prices are stored in USD, convert to selected currency
       const prices = {};
       const priceFields = ['price', 'startingBid', 'currentBid'];
       for (const field of priceFields) {
         if (product[field]) {
-          prices[field] = product[field]; // Same value for USDC/USDT
+          prices[field] = convertPriceToCurrency(product[field], currency);
         }
       }
       setConvertedPrices(prices);
@@ -651,6 +656,7 @@ const ViewProduct = ({ match, history }) => {
                         >
                           <Select.Option value="USDC">USDC (Polygon)</Select.Option>
                           <Select.Option value="USDT">USDT (Polygon)</Select.Option>
+                          <Select.Option value="AKOFA">AKOFA</Select.Option>
                         </Select>
                       </div>
                       <Button type='primary' onClick={handlePayWithWallet} disabled={paying || paymentStatus === 'AWAITING_PAYMENT'}>

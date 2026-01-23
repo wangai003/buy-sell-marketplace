@@ -6,10 +6,13 @@ import { getStoresForYou, updateProfile, updateUser } from '../actions/user';
 import { Tabs, Card, Avatar, Empty, Pagination, Tag, message, Modal, Button } from 'antd';
 import { ShopOutlined, ShoppingOutlined } from '@ant-design/icons';
 import MultiHierarchicalSelector from '../components/MultiHierarchicalSelector';
+import { useSelector } from 'react-redux';
+import { convertPriceToCurrency, getCurrencySymbol } from '../utils/currency';
 
 const ForYou = () => {
   const { user, token } = isAuthenticated();
   const history = useHistory();
+  const { selectedCurrency } = useSelector((state) => state.buynsellCurrency);
   const [products, setProducts] = useState([]);
   const [stores, setStores] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -284,7 +287,7 @@ const ForYou = () => {
                               </Link>
                               <div className='d-flex justify-content-between align-items-center mt-2'>
                                 <span className='text-success' style={{ fontWeight: 'bold' }}>
-                                  USDC{formatNumber(parseInt(p.price))}
+                                  {getCurrencySymbol(selectedCurrency)}{formatNumber(parseInt(convertPriceToCurrency(p.price, selectedCurrency || 'USDC')))}
                                 </span>
                                 <Link to={`/user/${p.author._id}`} className='text-decoration-none'>
                                   <small className='text-muted'>

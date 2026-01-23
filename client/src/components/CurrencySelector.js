@@ -8,8 +8,8 @@ const CurrencySelector = () => {
   const dispatch = useDispatch();
   const { selectedCurrency } = useSelector((state) => state.buynsellCurrency);
 
-  // Only USDC and USDT on Polygon are supported
-  const currencies = ['USDC', 'USDT'];
+  // Supported currencies: USDC, USDT, and AKOFA
+  const currencies = ['USDC', 'USDT', 'AKOFA'];
 
   const handleCurrencyChange = (value) => {
     dispatch({
