@@ -9,7 +9,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon app.js",
-    "heroku-postbuild": "cd client && npm install && npm run build"
+    "heroku-postbuild": "cd client && npm install && npm run build",
+    "deploy:amoy": "thirdweb deploy --contract contracts/PaymentRouter.sol --network amoy --constructor-args '[\"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174\",\"0xc2132D05D31c914a87C6611C10748AEb04B58e8F\"]'"
   },
   "author": "Babadinho",
   "license": "ISC",
@@ -22,6 +23,7 @@
     "cloudinary": "^1.26.2",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
+    "ethers": "^6.9.0",
     "express": "^4.17.1",
     "express-jwt": "^6.0.0",
     "express-validator": "^6.12.1",
@@ -30,10 +32,11 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.2",
     "node-cron": "^4.2.1",
-    "nodemon": "^2.0.12",
     "socket.io": "^4.2.0"
   },
   "devDependencies": {
-    "babel-jest": "^26.6.0"
+    "babel-jest": "^26.6.0",
+    "nodemon": "^3.1.11",
+    "thirdweb": "^5.116.1"
   }
 }

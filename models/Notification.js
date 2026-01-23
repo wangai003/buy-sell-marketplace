@@ -10,7 +10,14 @@ const NotificationSchema = new Schema({
     {
       type: {
         type: String,
-        enum: ['newFavorite', 'newComment', 'newFollower', 'newRating', 'auctionWinner'],
+        enum: [
+          'newFavorite',
+          'newComment',
+          'newFollower',
+          'newRating',
+          'auctionWinner',
+          'subscriptionRequired',
+        ],
       },
       status: {
         type: String,

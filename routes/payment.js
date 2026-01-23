@@ -5,16 +5,30 @@ const router = express.Router();
 const { requireSignin } = require('../middlewares');
 
 // controllers
-const { createPayment, handleWebhook, updateOrderStatus, nowpaymentsIpn, createNowpaymentsInvoice, getNowpaymentsCurrencies } = require('../controllers/payment');
+const {
+  createThirdwebPayment,
+  createDirectWalletPayment,
+  createExternalWalletPayment,
+  createSubscriptionExternalWalletPayment,
+  handleThirdwebWebhook,
+  handleAzixWebhook,
+  updateOrderStatus,
+  getOrderStatus,
+  confirmManualPayment,
+  verifyExternalWalletPayment,
+  monitorBlockchainPayments
+} = require('../controllers/payment');
 
 // routes
-router.post('/payment/create', requireSignin, createPayment);
-router.post('/payment/webhook', handleWebhook); // No auth for webhook, as it's from Helio
-router.post('/payment/nowpayments/ipn', nowpaymentsIpn); // No auth for IPN
-router.post('/payment/nowpayments/invoice', requireSignin, createNowpaymentsInvoice);
-router.post('/payment/stellar', requireSignin, require('../controllers/payment').createStellarPayment);
-router.get('/orders/:orderId', requireSignin, require('../controllers/payment').getOrderStatus);
-router.get('/payment/nowpayments/currencies', getNowpaymentsCurrencies);
+router.post('/payment/thirdweb', requireSignin, createThirdwebPayment);
+router.post('/payment/direct-wallet', requireSignin, createDirectWalletPayment);
+router.post('/payment/external-wallet', requireSignin, createExternalWalletPayment);
+router.post('/payment/subscription/external-wallet', requireSignin, createSubscriptionExternalWalletPayment);
+router.post('/payment/thirdweb/webhook', handleThirdwebWebhook); // No auth for webhook, as it's from Thirdweb
+router.post('/payment/external-wallet/webhook', handleAzixWebhook); // No auth for webhook, as it's from Azix
+router.get('/payment/external-wallet/verify/:orderId', requireSignin, verifyExternalWalletPayment);
+router.get('/orders/:orderId', requireSignin, getOrderStatus);
 router.put('/payment/status', requireSignin, updateOrderStatus);
+router.put('/payment/confirm-manual', requireSignin, confirmManualPayment);
 
 module.exports = router;

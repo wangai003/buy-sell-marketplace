@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { subscriptionRequiredNotification } = require('./notification');
 const Product = require('../models/Product');
 const cloudinary = require('../config/cloudinary').v2;
 const bcrypt = require('bcrypt');
@@ -7,6 +8,7 @@ const {
   newFollowerNotification,
   removeFollowerNotification,
 } = require('./notification');
+const { getTier, canAccessConnections, getConnectionsLimit, SUBSCRIPTION_TIERS } = require('../config/subscriptionTiers');
 
 exports.userProfile = async (req, res) => {
   let user = await User.findById(req.params.userId)
@@ -446,6 +448,128 @@ exports.getStoresForYou = async (req, res) => {
   }
 };
 
+// Helper to reset monthly usage if needed
+const resetMonthlyUsageIfNeeded = (seller) => {
+  const now = new Date();
+  
+  if (!seller.monthlyConnectionUsageResetDate || new Date(seller.monthlyConnectionUsageResetDate) <= now) {
+    seller.monthlyConnectionUsage = 0;
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    seller.monthlyConnectionUsageResetDate = nextMonth;
+  }
+  
+  if (!seller.monthlyAdvertisingDaysResetDate || new Date(seller.monthlyAdvertisingDaysResetDate) <= now) {
+    seller.monthlyAdvertisingDaysUsed = 0;
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    seller.monthlyAdvertisingDaysResetDate = nextMonth;
+  }
+  
+  if (!seller.monthlyCreativeRequestsResetDate || new Date(seller.monthlyCreativeRequestsResetDate) <= now) {
+    seller.monthlyCreativeRequestsUsed = 0;
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    seller.monthlyCreativeRequestsResetDate = nextMonth;
+  }
+};
+
+const isConnectionsSubscriptionActive = (seller) => {
+  if (!seller) {
+    return false;
+  }
+  
+  // Check new subscription fields first, fallback to legacy
+  const activeUntil = seller.subscriptionActiveUntil || seller.connectionsSubscriptionActiveUntil;
+  if (!activeUntil) {
+    return false;
+  }
+  
+  const isActive = new Date(activeUntil) > new Date();
+  if (!isActive) {
+    return false;
+  }
+  
+  // Check if tier allows connections
+  const tier = seller.subscriptionTier || 'FREE';
+  return canAccessConnections(tier);
+};
+
+exports.getConnectionsSubscriptionStatus = async (req, res) => {
+  try {
+    const sellerId = req.params.sellerId;
+
+    if (req.user && req.user._id.toString() !== sellerId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const seller = await User.findById(sellerId).select(
+      'subscriptionTier subscriptionBillingCycle subscriptionActiveUntil connectionsSubscriptionActiveUntil monthlyConnectionUsage monthlyConnectionUsageResetDate'
+    );
+    if (!seller) {
+      return res.status(404).json({ error: 'Seller not found' });
+    }
+
+    // Reset usage if needed
+    resetMonthlyUsageIfNeeded(seller);
+    await seller.save();
+
+    const tier = seller.subscriptionTier || 'FREE';
+    const tierConfig = getTier(tier);
+    const activeUntil = seller.subscriptionActiveUntil || seller.connectionsSubscriptionActiveUntil || null;
+    const isActive = isConnectionsSubscriptionActive(seller);
+    const connectionsLimit = getConnectionsLimit(tier);
+    const connectionsUsed = seller.monthlyConnectionUsage || 0;
+    const connectionsRemaining = connectionsLimit === -1 ? -1 : Math.max(0, connectionsLimit - connectionsUsed);
+
+    return res.json({
+      tier,
+      billingCycle: seller.subscriptionBillingCycle || 'monthly',
+      activeUntil,
+      isActive,
+      tierConfig: {
+        name: tierConfig.displayName,
+        connectionsPerMonth: connectionsLimit,
+        advertisingDaysPerMonth: tierConfig.features.advertisingDaysPerMonth,
+        creativeRequestsPerMonth: tierConfig.features.creativeRequestsPerMonth,
+        badge: tierConfig.features.badge,
+      },
+      usage: {
+        connectionsUsed,
+        connectionsRemaining,
+        connectionsLimit,
+      },
+    });
+  } catch (err) {
+    console.log('GET CONNECTIONS SUBSCRIPTION STATUS FAILED', err);
+    return res.status(500).json({ error: 'Database connection failed', details: err.message });
+  }
+};
+
+// Get available subscription tiers
+exports.getSubscriptionTiers = async (req, res) => {
+  try {
+    const tiers = Object.keys(SUBSCRIPTION_TIERS).map(key => {
+      const tier = SUBSCRIPTION_TIERS[key];
+      return {
+        name: tier.name,
+        displayName: tier.displayName,
+        monthlyPrice: tier.monthlyPrice,
+        yearlyPrice: tier.yearlyPrice,
+        yearlyOriginalPrice: tier.yearlyOriginalPrice,
+        yearlyDiscount: tier.yearlyDiscount,
+        features: tier.features,
+        description: tier.description,
+        whatYouGet: tier.whatYouGet,
+        whatsLocked: tier.whatsLocked,
+        whatYouUnlock: tier.whatYouUnlock,
+      };
+    });
+    
+    return res.json({ tiers });
+  } catch (err) {
+    console.log('GET SUBSCRIPTION TIERS FAILED', err);
+    return res.status(500).json({ error: 'Database connection failed', details: err.message });
+  }
+};
+
 // Get potential connections (buyers with matching interests who aren't connected)
 exports.getPotentialConnections = async (req, res) => {
   try {
@@ -454,6 +578,33 @@ exports.getPotentialConnections = async (req, res) => {
     
     if (!seller || !seller.canSell || !seller.sellerCategories || seller.sellerCategories.length === 0) {
       return res.json([]);
+    }
+
+    // Reset monthly usage if needed
+    resetMonthlyUsageIfNeeded(seller);
+
+    if (!isConnectionsSubscriptionActive(seller)) {
+      await subscriptionRequiredNotification(sellerId);
+      return res.status(402).json({
+        error: 'Subscription required',
+        subscriptionRequired: true,
+        activeUntil: seller.subscriptionActiveUntil || seller.connectionsSubscriptionActiveUntil || null,
+      });
+    }
+
+    // Check tier limits
+    const tier = seller.subscriptionTier || 'FREE';
+    const connectionsLimit = getConnectionsLimit(tier);
+    const connectionsUsed = seller.monthlyConnectionUsage || 0;
+
+    // If limit is reached (and not unlimited)
+    if (connectionsLimit !== -1 && connectionsUsed >= connectionsLimit) {
+      return res.status(403).json({
+        error: 'Monthly connection limit reached',
+        connectionsUsed,
+        connectionsLimit,
+        resetDate: seller.monthlyConnectionUsageResetDate,
+      });
     }
 
     // Get seller's connected buyers IDs
@@ -468,7 +619,7 @@ exports.getPotentialConnections = async (req, res) => {
       ...connectedBuyerIds,
       sellerObjectId
     ];
-    const potentialBuyers = await User.find({
+    let potentialBuyers = await User.find({
       _id: { $nin: allExcludedIds }, // Not already connected and not the seller themselves
       interestedCategories: { $in: seller.sellerCategories },
       canSell: false, // Only buyers, not other sellers
@@ -476,6 +627,12 @@ exports.getPotentialConnections = async (req, res) => {
     .populate('interestedCategories')
     .select('-password -favourites -followers -following -products -ratings -sellerCategories -connectedBuyers')
     .exec();
+
+    // Apply tier limit to results (if not unlimited)
+    if (connectionsLimit !== -1) {
+      const remaining = connectionsLimit - connectionsUsed;
+      potentialBuyers = potentialBuyers.slice(0, remaining);
+    }
 
     // Convert any HTTP image URLs to HTTPS
     const sanitizedBuyers = potentialBuyers.map(buyer => {
@@ -549,6 +706,33 @@ exports.createConnection = async (req, res) => {
       return res.status(400).json({ error: 'Invalid buyer' });
     }
 
+    // Reset monthly usage if needed
+    resetMonthlyUsageIfNeeded(seller);
+
+    if (!isConnectionsSubscriptionActive(seller)) {
+      await subscriptionRequiredNotification(sellerId);
+      return res.status(402).json({
+        error: 'Subscription required',
+        subscriptionRequired: true,
+        activeUntil: seller.subscriptionActiveUntil || seller.connectionsSubscriptionActiveUntil || null,
+      });
+    }
+
+    // Check tier limits
+    const tier = seller.subscriptionTier || 'FREE';
+    const connectionsLimit = getConnectionsLimit(tier);
+    const connectionsUsed = seller.monthlyConnectionUsage || 0;
+
+    // If limit is reached (and not unlimited)
+    if (connectionsLimit !== -1 && connectionsUsed >= connectionsLimit) {
+      return res.status(403).json({
+        error: 'Monthly connection limit reached',
+        connectionsUsed,
+        connectionsLimit,
+        resetDate: seller.monthlyConnectionUsageResetDate,
+      });
+    }
+
     // Check if already connected
     const buyerObjectId = mongoose.Types.ObjectId.isValid(buyerId)
       ? mongoose.Types.ObjectId(buyerId)
@@ -566,6 +750,12 @@ exports.createConnection = async (req, res) => {
       seller.connectedBuyers = [];
     }
     seller.connectedBuyers.push(buyerId);
+    
+    // Increment monthly connection usage (if not unlimited)
+    if (connectionsLimit !== -1) {
+      seller.monthlyConnectionUsage = (seller.monthlyConnectionUsage || 0) + 1;
+    }
+    
     await seller.save();
 
     return res.json({ 

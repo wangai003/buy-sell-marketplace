@@ -6,7 +6,6 @@ import {
   getConnectedBuyers,
   createConnection,
   getConnectionsSubscriptionStatus,
-  getSubscriptionTiers,
 } from '../actions/user';
 import {
   Tabs,
@@ -114,7 +113,8 @@ const Connections = () => {
       setLoadingPotential(false);
       isLoadingRef.current = false;
     }
-  }, [user?._id, token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id, token]); // showErrorOnce is stable, user._id is sufficient
 
   const loadConnectedBuyers = useCallback(async () => {
     if (!user || !token) return;
@@ -129,7 +129,8 @@ const Connections = () => {
     } finally {
       setLoadingConnected(false);
     }
-  }, [user?._id, token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id, token]); // showErrorOnce is stable, user._id is sufficient
 
   useEffect(() => {
     if (!user || !token) {

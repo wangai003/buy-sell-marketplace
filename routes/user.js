@@ -21,6 +21,8 @@ const {
   favouriteProducts,
   submitSellerApplication,
   getStoresForYou,
+  getConnectionsSubscriptionStatus,
+  getSubscriptionTiers,
   getPotentialConnections,
   getConnectedBuyers,
   createConnection,
@@ -59,6 +61,8 @@ router.post('/user/read-message', markMessageRead);
 router.post('/user/products/:userId', userProducts);
 router.post('/user/become-seller/:userId', requireSignin, submitSellerApplication);
 router.get('/for-you/stores/:userId', requireSignin, getStoresForYou);
+router.get('/seller/subscription-status/:sellerId', requireSignin, getConnectionsSubscriptionStatus);
+router.get('/seller/subscription-tiers', getSubscriptionTiers); // Public endpoint
 router.get('/seller/potential-connections/:sellerId', requireSignin, getPotentialConnections);
 router.get('/seller/connected-buyers/:sellerId', requireSignin, getConnectedBuyers);
 router.post('/seller/create-connection', requireSignin, createConnection);

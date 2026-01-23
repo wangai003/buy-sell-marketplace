@@ -31,6 +31,38 @@ const setNotificationToUnread = async (userId) => {
   }
 };
 
+const subscriptionRequiredNotification = async (userId) => {
+  try {
+    const userToNotify = await Notification.findOne({ user: userId });
+    if (!userToNotify) {
+      return;
+    }
+
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const recent = userToNotify.notifications.find(
+      (notification) =>
+        notification.type === 'subscriptionRequired' &&
+        new Date(notification.date).getTime() > oneDayAgo
+    );
+    if (recent) {
+      return;
+    }
+
+    const newNotification = {
+      type: 'subscriptionRequired',
+      status: 'unRead',
+      date: Date.now(),
+    };
+
+    await userToNotify.notifications.unshift(newNotification);
+    await userToNotify.save();
+
+    await setNotificationToRead(userId);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 const newFavoriteNotification = async (userId, prodcutId, userToNotifyId) => {
   try {
     const userToNotify = await Notification.findOne({ user: userToNotifyId });
@@ -271,6 +303,7 @@ module.exports = {
   newFollowerNotification,
   removeFollowerNotification,
   auctionWinnerNotification,
+  subscriptionRequiredNotification,
   getUserNotifications,
   markNotificationsRead,
 };

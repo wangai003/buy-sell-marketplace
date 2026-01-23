@@ -135,6 +135,59 @@ const UserSchema = new Schema(
         ref: 'user',
       },
     ],
+    // Subscription tier and billing
+    subscriptionTier: {
+      type: String,
+      enum: ['FREE', 'STARTER', 'BUSINESS', 'CUSTOM'],
+      default: 'FREE',
+    },
+    subscriptionBillingCycle: {
+      type: String,
+      enum: ['monthly', 'yearly'],
+      default: 'monthly',
+    },
+    subscriptionActiveUntil: {
+      type: Date,
+    },
+    // Monthly usage tracking
+    monthlyConnectionUsage: {
+      type: Number,
+      default: 0,
+    },
+    monthlyConnectionUsageResetDate: {
+      type: Date,
+      default: function() {
+        // Set to first day of next month
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      },
+    },
+    monthlyAdvertisingDaysUsed: {
+      type: Number,
+      default: 0,
+    },
+    monthlyAdvertisingDaysResetDate: {
+      type: Date,
+      default: function() {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      },
+    },
+    monthlyCreativeRequestsUsed: {
+      type: Number,
+      default: 0,
+    },
+    monthlyCreativeRequestsResetDate: {
+      type: Date,
+      default: function() {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      },
+    },
+    // Legacy field for backward compatibility
+    connectionsSubscriptionActiveUntil: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

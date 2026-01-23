@@ -106,7 +106,11 @@ app.use(cors({
   credentials: true
 }));
 app.use(morgan('dev'));
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(express.json());
 
@@ -138,6 +142,16 @@ cron.schedule('* * * * *', async () => {
     await processEndedAuctions(req, res);
   } catch (error) {
     console.error('Error in automatic auction processing:', error);
+  }
+});
+
+// Blockchain payment monitoring - runs every 2 minutes
+cron.schedule('*/2 * * * *', async () => {
+  try {
+    const { monitorBlockchainPayments } = require('./controllers/payment');
+    await monitorBlockchainPayments();
+  } catch (error) {
+    console.error('Error in blockchain payment monitoring:', error);
   }
 });
 

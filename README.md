@@ -2,7 +2,7 @@
 All-in-One Marketplace where users can buy or list different products for sale. Includes features like Notifications, Chat, User follow, Rate user and Add favourites.
 
 ## Features
-- **Crypto Payment Integration**: Secure payments using Helio SDK for cryptocurrency transactions
+- **Crypto Payment Integration**: External wallet payments verified via Azix backend
 - **Order Management**: Complete order lifecycle from payment to delivery confirmation
 - **Commission System**: 10% platform commission on all transactions
 - **Real-time Updates**: Socket.io integration for live order status updates
@@ -42,7 +42,7 @@ All-in-One Marketplace where users can buy or list different products for sale. 
 ### Prerequisites
 - Node.js (v12.18.4 or higher)
 - MongoDB database
-- Helio account for crypto payments
+- Azix backend access for external wallet verification
 
 ### Backend Setup
 1. Clone the repository
@@ -51,10 +51,10 @@ All-in-One Marketplace where users can buy or list different products for sale. 
    ```
    MONGO_URI=your_mongodb_connection_string
    JWT_SECRET=your_jwt_secret
-   HELIO_PUBLIC_KEY=your_helio_public_key
-   HELIO_SECRET_KEY=your_helio_secret_key
-   HELIO_WEBHOOK_SECRET=your_helio_webhook_secret
    ADMIN_WALLET_ADDRESS=your_admin_wallet_address
+   AZIX_BACKEND_URL=https://api.yourdomain.com
+   AZIX_STORE_API_KEY=your_azix_store_api_key
+   AZIX_WEBHOOK_SECRET=optional_shared_secret
    ```
 4. Start the server: `npm start`
 
@@ -68,13 +68,14 @@ All-in-One Marketplace where users can buy or list different products for sale. 
 1. Build the client: `cd client && npm run build`
 2. Set environment variables on your hosting platform
 3. Deploy the server (Heroku, Railway, etc.)
-4. Ensure webhook URL is configured in Helio dashboard for payment callbacks
+4. Register your webhook URL in Azix for payment callbacks
 
 ## API Endpoints
 
 ### Payment
-- `POST /api/payment/create` - Create payment link
-- `POST /api/payment/webhook` - Handle payment webhooks
+- `POST /api/payment/external-wallet` - Create external wallet payment order
+- `GET /api/payment/external-wallet/verify/:orderId` - Verify payment by order ID
+- `POST /api/payment/external-wallet/webhook` - Handle Azix payment webhooks
 - `PUT /api/payment/status` - Update order status
 
 ### Orders

@@ -4,11 +4,15 @@ const orderSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
-    required: true,
+    required: function () {
+      return this.orderType !== 'subscription';
+    },
   },
   productName: {
     type: String,
-    required: true,
+    required: function () {
+      return this.orderType !== 'subscription';
+    },
   },
   price: {
     type: Number,
@@ -109,8 +113,25 @@ const orderSchema = new mongoose.Schema({
   },
   orderType: {
     type: String,
-    enum: ['regular', 'auction'],
+    enum: ['regular', 'auction', 'subscription'],
     default: 'regular',
+  },
+  subscriptionApplied: {
+    type: Boolean,
+    default: false,
+  },
+  // Subscription-specific fields
+  subscriptionTier: {
+    type: String,
+    enum: ['FREE', 'STARTER', 'BUSINESS', 'CUSTOM'],
+  },
+  subscriptionBillingCycle: {
+    type: String,
+    enum: ['monthly', 'yearly'],
+  },
+  subscriptionDurationMonths: {
+    type: Number,
+    default: 1, // 1 for monthly, 12 for yearly
   },
   payAsset: {
     type: String,

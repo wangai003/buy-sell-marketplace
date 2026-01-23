@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Modal, Card, Button, Radio, Tag, Divider, Typography, Space, Alert, message } from 'antd';
-import { CheckOutlined, CrownOutlined } from '@ant-design/icons';
+import { CheckOutlined } from '@ant-design/icons';
 import { getSubscriptionTiers } from '../actions/user';
 
 const { Title, Text, Paragraph } = Typography;

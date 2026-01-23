@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { isAuthenticated } from '../actions/auth';
-import { Tooltip, message, Descriptions, Card, Avatar, Button, Modal, Select, Input, List, Typography } from 'antd';
+import { Tooltip, message, Descriptions, Card, Avatar, Button, Select, Input, List, Typography } from 'antd';
 import moment from 'moment';
 import {
   singleProduct,
   addFavourite,
   removeFavourite,
   favouriteCount,
-  createPayment,
-  createNowpaymentsInvoice,
   placeBid,
   getBids,
 } from '../actions/product';
@@ -21,11 +19,9 @@ import 'react-image-gallery/styles/css/image-gallery.css';
 import RelatedProducts from './RelatedProducts';
 import { useDispatch, useSelector } from 'react-redux';
 import QRCode from 'react-qr-code';
-import { fetchConvertedPrice } from '../actions/currency';
 import DirectWalletPaymentModal from "../components/SimplePaymentModal";
-import { convertPriceToCurrency, getCurrencySymbol } from '../utils/currency';
+import { convertPriceToCurrency } from '../utils/currency';
 
-const { Option } = Select;
 const { Meta } = Card;
 
 
@@ -44,11 +40,6 @@ const ViewProduct = ({ match, history }) => {
   const [favourite, setFavourite] = useState(false);
   const [favCount, setFavCount] = useState(null);
   const [showWidget, setShowWidget] = useState(false);
-  const [invoiceUrl, setInvoiceUrl] = useState('');
-  const [widgetAddress, setWidgetAddress] = useState('');
-  const [widgetAmount, setWidgetAmount] = useState('');
-  const [widgetCurrency, setWidgetCurrency] = useState('');
-  const [payCurrency, setPayCurrency] = useState('USDC'); // default: USDC
   const [currencies, setCurrencies] = useState(['USDC', 'USDT']);
   const [stellarPay, setStellarPay] = useState(null);
   const [paying, setPaying] = useState(false);

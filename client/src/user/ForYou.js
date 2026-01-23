@@ -77,7 +77,7 @@ const ForYou = () => {
       setLoadingProducts(false);
       setLoadingStores(false);
     }
-  }, [user?._id, token]);
+  }, [user?._id, token, activeTab]);
 
   useEffect(() => {
     if (!user || !token) {
@@ -92,37 +92,8 @@ const ForYou = () => {
     } else {
       loadForYouContent();
     }
-  }, [user?._id, user?.interestedCategories?.length, token, loadForYouContent]);
+  }, [user?._id, user?.interestedCategories?.length, token, history, loadForYouContent]);
 
-  const loadProducts = async () => {
-    if (!user || !token) return;
-    setLoadingProducts(true);
-    try {
-      const res = await getProductsForYou(user._id, token);
-      setProducts(res.data || []);
-    } catch (err) {
-      console.error('Error loading products:', err);
-      setProducts([]);
-      message.error('Failed to load products. Please try again.');
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
-
-  const loadStores = async () => {
-    if (!user || !token) return;
-    setLoadingStores(true);
-    try {
-      const res = await getStoresForYou(user._id, token);
-      setStores(res.data || []);
-    } catch (err) {
-      console.error('Error loading stores:', err);
-      setStores([]);
-      message.error('Failed to load stores. Please try again.');
-    } finally {
-      setLoadingStores(false);
-    }
-  };
 
   const formatNumber = (num) => {
     var re = '\\d(?=(\\d{3})+)';

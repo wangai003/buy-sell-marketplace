@@ -8,7 +8,7 @@ exports.userChat = async (req, res) => {
 
     let chatsToBeSent = [];
 
-    if (user.chats.length > 0) {
+    if (user && user.chats && user.chats.length > 0) {
       chatsToBeSent = await user.chats.map((chat) => ({
         messagesWith: chat.messagesWith._id,
         name: chat.messagesWith.name,
@@ -20,7 +20,8 @@ exports.userChat = async (req, res) => {
 
     return res.json(chatsToBeSent);
   } catch (err) {
-    console.log(err);
+    console.error('Error in userChat:', err);
+    return res.status(500).json({ error: 'Failed to load chats' });
   }
 };
 
