@@ -37,8 +37,13 @@ const Login = ({ history }) => {
         window.location.reload();
       }
     } catch (err) {
-      console.log(err);
-      if (err.response.status === 400) message.error(err.response.data, 4);
+      console.log('Login error:', err);
+      if (err.response && err.response.status === 400) {
+        const errorMessage = err.response.data?.error || err.response.data || 'Login failed. Please try again.';
+        message.error(errorMessage, 4);
+      } else {
+        message.error('Network error. Please check your connection and try again.', 4);
+      }
     }
   };
 

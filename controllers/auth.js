@@ -65,27 +65,36 @@ exports.register = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
+  console.log('Login request received:', { body: req.body, headers: req.headers['content-type'] });
   const { email, password } = req.body;
+  
   //validation
-  if (!email || !password)
-    return res.status(400).send('All fields are required');
+  if (!email || !password) {
+    console.log('Login validation failed: Missing email or password');
+    return res.status(400).json({ error: 'All fields are required' });
+  }
 
   try {
     let user = await User.findOne({ email }).exec();
-    if (!user)
-      return res.status(400).send('User with that email does not exist');
+    if (!user) {
+      console.log('Login failed: User not found for email:', email);
+      return res.status(400).json({ error: 'User with that email does not exist' });
+    }
 
-    if (user.role === 'banned')
+    if (user.role === 'banned') {
+      console.log('Login failed: User is banned:', email);
       return res
         .status(400)
-        .send('You have been banned for breaking site rules!');
+        .json({ error: 'You have been banned for breaking site rules!' });
+    }
 
     //match password
     bcrypt.compare(password, user.password, function (err, match) {
       if (!match || err) {
-        return res.status(400).send('Password is incorrect');
+        console.log('Login failed: Password incorrect for email:', email);
+        return res.status(400).json({ error: 'Password is incorrect' });
       }
-      console.log('password match', match);
+      console.log('Login successful for user:', email);
       //Generate jwt signed token and send as reponse to client
       let token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, {
         expiresIn: '7d',
@@ -134,6 +143,6 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     console.log('Login ERROR', err);
-    res.status(400).send('Login failed. try again');
+    res.status(400).json({ error: 'Login failed. try again' });
   }
 };
